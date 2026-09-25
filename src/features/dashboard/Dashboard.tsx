@@ -41,7 +41,7 @@ const toneCls: Record<DeltaTone, string> = {
 };
 
 const bentoCard =
-  'rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl';
+  'rounded-[2.2rem] border border-white/80 bg-white/60 p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/70 hover:shadow-2xl';
 
 /** SVG radial progress ring for vacancy %. */
 function RadialRing({ pct }: { pct: number }): React.JSX.Element {
@@ -342,8 +342,9 @@ export function Dashboard({
       </div>
 
       {/* Dark executive highlight */}
-      <div className="relative col-span-12 overflow-hidden rounded-[2rem] bg-[#0F172A] p-6 text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl xl:col-span-4">
+      <div className="relative col-span-12 overflow-hidden rounded-[2.2rem] border border-slate-700/60 bg-[#0F172A]/95 p-6 text-white shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl xl:col-span-4">
         <span className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[#FACC15]/10 blur-2xl" />
+        <span className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-amber-500/10 blur-2xl" />
         <span className="pointer-events-none absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-brand-blue/20 blur-2xl" />
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FACC15]">
           <Sparkles size={13} /> Lectura ejecutiva

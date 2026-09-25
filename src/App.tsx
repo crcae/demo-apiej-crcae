@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { TopNav } from './components/TopNav.js';
 import type { TourStep } from './components/TopNav.js';
+import { TourDock, type TourAction } from './components/TourDock.js';
 import { AuditList } from './features/auditoria/AuditList.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
@@ -49,8 +50,7 @@ function App(): React.JSX.Element {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
   const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
-  const [tourOpen, setTourOpen] = useState(false);
-  const [tourDone, setTourDone] = useState<TourStep | null>(null);
+  const [tourStep, setTourStep] = useState<TourStep | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
 
   const persona = PERSONAS.find((p) => p.key === personaKey) ?? PERSONAS[0];
@@ -73,22 +73,123 @@ function App(): React.JSX.Element {
     }
   }
 
-  function handleTourStep(s: TourStep): void {
-    setTourDone(s);
+  function applyTourStep(s: TourStep): void {
     if (s === 1) {
+      switchPersona('STAFF');
+      setView('dashboard');
+      setPeriodId('p-2026-q1');
+      flash('Paso 1: Q1 congelado (inmutable). Cambia USD/MXN arriba: el FX Banxico convierte al instante.');
+    } else if (s === 2) {
+      switchPersona('ALPHA');
       setView('dashboard');
       setPeriodId('p-2026-q2');
-      flash('Paso 1: compara Q1 congelado vs Q2 activo y el desglose por corredor.');
-    } else if (s === 2) {
-      setPersonaKey('ALPHA');
-      setView('dashboard');
-      flash('Paso 2: ahora eres Developer Alpha — observa cómo cambian KPIs, mapa y listas. Prueba Beta después.');
-    } else {
-      setPersonaKey('STAFF');
+      flash('Paso 2: eres Dev Alpha — lo de Beta vanish: KPIs, mapa y listas filtrados por backend.');
+    } else if (s === 3) {
+      switchPersona('STAFF');
       setView('validacion');
-      flash('Paso 3: aprueba una propiedad y vuelve al Dashboard para ver el recálculo Q2 en vivo.');
+      flash('Paso 3: la nave pendiente brilla en dorado. Revísala y apruébala en 1 clic.');
+    } else if (s === 4) {
+      setView('validacion');
+      flash('Paso 4: pulsa “Aprobar 1ª pendiente” en el dock o “Aprobar & Verificar” en la tarjeta.');
+    } else {
+      setView('mapa');
+      flash('Paso 5: pines con ficha técnica e infraestructura. Exporta el Reporte Ejecutivo Q2.');
     }
   }
+
+  function tourNext(): void {
+    if (tourStep === null) return;
+    if (tourStep === 5) {
+      setTourStep(null);
+      flash('Tour finalizado — Q1 intacto, Q2 en vivo. ¡Gracias!');
+      return;
+    }
+    const n = (tourStep + 1) as TourStep;
+    setTourStep(n);
+    applyTourStep(n);
+  }
+
+  function tourPrev(): void {
+    if (tourStep === null || tourStep === 1) return;
+    const p = (tourStep - 1) as TourStep;
+    setTourStep(p);
+    applyTourStep(p);
+  }
+
+  function tourApproveFirst(): void {
+    if (!staff) {
+      flash('El tour necesita rol Staff para aprobar.');
+      return;
+    }
+    const first = inboxItems[0];
+    if (!first) {
+      flash('Sin pendientes: crea una nave en Captura y envíala a validación primero.');
+      return;
+    }
+    decide(first, 'VERIFIED', 'Aprobado en tour guiado');
+    setTourStep(5);
+    flash('✓ Aprobada y Q2 recalculado en vivo — Q1 intacto. Paso 5: mapa y reporte.');
+  }
+
+  const inboxItems: PendingItem[] = useMemo(() => {
+    const all: PendingItem[] = [
+      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
+      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
+      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
+    ];
+    if (staff) return all;
+    return all.filter((it) => {
+      if (it.kind === 'BUILDING') return buildings.find((b) => b.id === it.id)?.orgId === actor.orgId;
+      if (it.kind === 'PARK') return parks.find((p) => p.id === it.id)?.orgId === actor.orgId;
+      return lands.find((l) => l.id === it.id)?.orgId === actor.orgId;
+    });
+  }, [parks, buildings, lands, staff, actor.orgId]);
+
+  const TOUR_COPY: Record<TourStep, { title: string; text: string; actions: () => TourAction[] }> = {
+    1: {
+      title: 'Visión General Q1',
+      text: 'Q1 2026 está congelado como Snapshot inmutable. Prueba cambiar entre USD y MXN.',
+      actions: () => [{
+        label: currency === 'USD' ? 'Cambiar a MXN' : 'Cambiar a USD',
+        gold: true,
+        run: () => setCurrency(currency === 'USD' ? 'MXN' : 'USD'),
+      }],
+    },
+    2: {
+      title: 'Aislamiento Multi-Tenant',
+      text: 'Aislamiento total: los datos de Dev Beta desaparecieron del sistema en tiempo real.',
+      actions: () => [{
+        label: 'Probar Dev Beta',
+        gold: true,
+        run: () => {
+          switchPersona('BETA');
+          flash('Ahora eres Dev Beta — compara: otros parques, otros números.');
+        },
+      }],
+    },
+    3: {
+      title: 'Bandeja de Validación',
+      text: `Como APIEJ Staff, tienes ${inboxItems.length} ${inboxItems.length === 1 ? 'nave pendiente' : 'naves pendientes'} de aprobación. Brilla en dorado.`,
+      actions: () => [],
+    },
+    4: {
+      title: 'Aprobación y Recálculo Q2',
+      text: 'Pulsa «Aprobar 1ª pendiente» y mira cómo la vacancia y la absorción del Q2 se recalculan en vivo.',
+      actions: () => [{
+        label: 'Aprobar 1ª pendiente y recalcular',
+        gold: true,
+        run: tourApproveFirst,
+      }],
+    },
+    5: {
+      title: 'Mapa GIS y Reporte PDF',
+      text: 'Explora la geolocalización de parques y genera el reporte ejecutivo oficial.',
+      actions: () => [
+        { label: 'Ir al Mapa GIS', run: () => setView('mapa') },
+        { label: 'Abrir reporte PDF', gold: true, run: () => setReportOpen(true) },
+      ],
+    },
+  };
 
   // Tenant-filtered datasets (backend RLS mirrored in marketService)
   const visParks = useMemo(() => {
@@ -109,20 +210,6 @@ function App(): React.JSX.Element {
     () => computeLiveKpis(staff ? buildings : visBuildings, parks, 'p-2026-q2', fx),
     [staff, buildings, visBuildings, parks, fx],
   );
-
-  const inboxItems: PendingItem[] = useMemo(() => {
-    const all: PendingItem[] = [
-      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
-      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
-      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
-    ];
-    if (staff) return all;
-    return all.filter((it) => {
-      if (it.kind === 'BUILDING') return buildings.find((b) => b.id === it.id)?.orgId === actor.orgId;
-      if (it.kind === 'PARK') return parks.find((p) => p.id === it.id)?.orgId === actor.orgId;
-      return lands.find((l) => l.id === it.id)?.orgId === actor.orgId;
-    });
-  }, [parks, buildings, lands, staff, actor.orgId]);
 
   function pushAudit(e: Omit<AuditEntry, 'id' | 'createdAt'>): void {
     setAudit((prev) => [{ ...e, id: `a-${nowIso()}`, createdAt: nowIso() }, ...prev]);
@@ -222,8 +309,8 @@ function App(): React.JSX.Element {
       : ['dashboard', 'mapa', 'captura', 'validacion'];
 
   return (
-    <div className="flex min-h-screen justify-center bg-gradient-to-br from-[#E2E8F0] via-[#D6DCE5] to-[#E2E8F0] p-4 md:p-6 lg:p-8">
-      <div className="w-full max-w-[1600px] overflow-hidden rounded-[2.5rem] border border-white/80 bg-[#F3F4F1] p-6 shadow-2xl md:p-8">
+    <div className="flex min-h-screen justify-center bg-gradient-to-br from-[#E8D8CD] via-[#E2D5C8] to-[#CBD5E1] p-4 md:p-8">
+      <div className="w-full max-w-[1600px] overflow-hidden rounded-[2.5rem] border border-white/80 bg-[#F4F1EB]/80 p-6 shadow-2xl backdrop-blur-sm md:p-8">
       <TopNav
         persona={personaKey}
         onPersona={switchPersona}
@@ -238,16 +325,34 @@ function App(): React.JSX.Element {
         currency={currency}
         onCurrency={setCurrency}
         onExport={() => setReportOpen(true)}
-        tourOpen={tourOpen}
-        onToggleTour={() => setTourOpen((o) => !o)}
-        onTourStep={handleTourStep}
-        tourDone={tourDone}
+        onOpenTour={() => {
+          setTourStep(1);
+          // applyTourStep(1) runs on next tick via effect-free direct calls:
+          switchPersona('STAFF');
+          setView('dashboard');
+          setPeriodId('p-2026-q1');
+          flash('Paso 1: Q1 congelado (inmutable). Cambia USD/MXN arriba: el FX Banxico convierte al instante.');
+        }}
       />
 
-      <div className="mx-auto max-w-7xl px-1 py-5">
+      <div className="mx-auto max-w-7xl px-1 pt-4">
+      {tourStep !== null && (
+        <TourDock
+          step={tourStep}
+          total={5}
+          title={TOUR_COPY[tourStep].title}
+          text={TOUR_COPY[tourStep].text}
+          actions={TOUR_COPY[tourStep].actions()}
+          canPrev={tourStep > 1}
+          isLast={tourStep === 5}
+          onPrev={tourPrev}
+          onNext={tourNext}
+          onClose={() => setTourStep(null)}
+        />
+      )}
 
         {/* Mobile nav — floating pill */}
-        <div className="fixed bottom-3 left-3 right-3 z-30 flex gap-1 rounded-full border border-slate-200/80 bg-white/85 p-1.5 shadow-lg backdrop-blur-md md:hidden">
+        <div className="fixed bottom-3 left-3 right-3 z-[80] flex gap-1 rounded-full border border-slate-200/80 bg-white/85 p-1.5 shadow-lg backdrop-blur-md md:hidden">
           {allowedViews.map((v) => (
             <button
               key={v}
@@ -261,12 +366,9 @@ function App(): React.JSX.Element {
         </div>
 
         {/* Main */}
-        <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter min-w-0 flex-1 pb-20 md:pb-0">
+        <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter relative z-10 min-w-0 flex-1 pb-20 md:pb-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-extrabold text-[#0B192C]">{VIEW_LABEL[view]}</h2>
-            <span className="rounded-full bg-[#0B192C] px-3 py-1 text-[11px] font-bold text-white">
-              {persona.label} · {actor.orgName}
-            </span>
+            <h2 className="text-lg font-extrabold tracking-tight text-[#0F172A]">{VIEW_LABEL[view]}</h2>
             <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
               {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
             </span>
@@ -348,7 +450,7 @@ function App(): React.JSX.Element {
                 </p>
               )}
               {staff ? (
-                <ValidationInbox items={inboxItems} onDecide={decide} />
+                <ValidationInbox items={inboxItems} onDecide={decide} spotlight={tourStep === 3 || tourStep === 4} />
               ) : (
                 <div className="space-y-2">
                   {inboxItems.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin envíos pendientes de tu organización.</p>}
@@ -385,7 +487,7 @@ function App(): React.JSX.Element {
       )}
 
       {toast !== null && (
-        <div className="fixed bottom-6 left-1/2 z-50 w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
+        <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
           {toast}
         </div>
       )}

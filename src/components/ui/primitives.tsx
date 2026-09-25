@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 export function Card({ children }: { children: ReactNode }): React.JSX.Element {
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">{children}</div>
+    <div className="rounded-[2.2rem] border border-white/80 bg-white/60 shadow-xl backdrop-blur-xl transition-all hover:bg-white/70 hover:shadow-2xl">{children}</div>
   );
 }
 

@@ -75,7 +75,7 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
   const rentMxn = d.askingRentUsdM2 !== undefined ? d.askingRentUsdM2 * fxUsdMxn : undefined;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-[#0B192C]/60 p-4 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#0B192C]/60 p-4 sm:items-center" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <Card>
           <CardBody>

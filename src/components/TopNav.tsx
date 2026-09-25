@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Check, ChevronDown, FileDown, Map, Presentation, ShieldCheck, Stamp } from 'lucide-react';
+import { Check, ChevronDown, FileDown, Presentation } from 'lucide-react';
 import { PERSONAS, PERSONA_SHORT, PERSONA_WHY } from '../store/personas.js';
 import type { Currency } from '../features/dashboard/Dashboard.js';
 import type { DemoPersonaKey } from '../types/domain.js';
 
-export type TourStep = 1 | 2 | 3;
+export type TourStep = 1 | 2 | 3 | 4 | 5;
 
 export interface TopNavItem {
   key: string;
@@ -22,21 +22,12 @@ interface Props {
   currency: Currency;
   onCurrency: (c: Currency) => void;
   onExport: () => void;
-  tourOpen: boolean;
-  onToggleTour: () => void;
-  onTourStep: (s: TourStep) => void;
-  tourDone: TourStep | null;
+  onOpenTour: () => void;
 }
-
-const TOUR_STEPS: Array<{ n: TourStep; label: string; hint: string; icon: typeof Map }> = [
-  { n: 1, label: 'Resumen de Mercado Q1/Q2', hint: 'Enfoca el Dashboard: KPIs y desglose por corredor', icon: Map },
-  { n: 2, label: 'Prueba Aislamiento Multi-Tenant', hint: 'Cambia a Dev Alpha y mira el filtrado instantáneo', icon: ShieldCheck },
-  { n: 3, label: 'Aprueba Nave y Recalcula', hint: 'Inbox de Validación: aprueba en 1 clic, Q2 se recalcula', icon: Stamp },
-];
 
 export function TopNav({
   persona, onPersona, items, activeView, onView, visibleCounts,
-  currency, onCurrency, onExport, tourOpen, onToggleTour, onTourStep, tourDone,
+  currency, onCurrency, onExport, onOpenTour,
 }: Props): React.JSX.Element {
   const [personaOpen, setPersonaOpen] = useState(false);
   const current = PERSONAS.find((p) => p.key === persona) ?? PERSONAS[0];
@@ -47,7 +38,7 @@ export function TopNav({
   }
 
   return (
-    <header className="px-1 pt-1">
+    <header className="relative z-[100] px-1 pt-1">
       <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 rounded-full border border-slate-200/70 bg-white/85 py-2 pl-4 pr-2 shadow-sm backdrop-blur-md">
         {/* Brand */}
         <button
@@ -91,18 +82,14 @@ export function TopNav({
 
         {/* Right cluster */}
         <div className="ml-auto flex items-center gap-1.5">
-          {/* Tour */}
+          {/* Tour opener */}
           <button
             type="button"
-            onClick={onToggleTour}
-            title="Guía interactiva de 3 pasos para la presentación"
-            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-extrabold transition-all duration-200 ${
-              tourOpen
-                ? 'bg-[#0F172A] text-[#FACC15]'
-                : 'bg-[#FACC15] text-slate-900 shadow-[0_0_18px_rgba(250,204,21,0.45)] hover:shadow-[0_0_26px_rgba(250,204,21,0.65)]'
-            }`}
+            onClick={onOpenTour}
+            title="Inicia el tour guiado de 5 pasos (control inferior)"
+            className="flex items-center gap-1.5 rounded-full bg-[#FACC15] px-3.5 py-2 text-xs font-extrabold text-slate-900 shadow-[0_0_18px_rgba(250,204,21,0.45)] transition-all duration-200 hover:shadow-[0_0_26px_rgba(250,204,21,0.65)]"
           >
-            <Presentation size={13} /> Tour Guiado
+            <Presentation size={13} /> <span className="hidden sm:inline">Tour</span><span className="sm:hidden">▶</span>
           </button>
 
           {/* Currency */}
@@ -148,8 +135,8 @@ export function TopNav({
             </button>
             {personaOpen && (
               <>
-                <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-10 cursor-default" onClick={() => setPersonaOpen(false)} />
-                <div role="menu" className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-1.5 shadow-xl">
+                <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-[90] cursor-default" onClick={() => setPersonaOpen(false)} />
+                <div role="menu" className="absolute right-0 z-[100] mt-2 w-80 overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-1.5 shadow-xl">
                   <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
                     Cambiar persona · los datos se filtran al instante
                   </p>
@@ -183,34 +170,6 @@ export function TopNav({
             )}
           </div>
         </div>
-
-        {/* Tour popover */}
-        {tourOpen && (
-          <div className="absolute right-2 top-full z-20 mt-2 w-[22rem] rounded-3xl border border-amber-200/70 bg-white/95 p-2 shadow-xl backdrop-blur-md">
-            <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600">
-              Tour guiado · 3 pasos
-            </p>
-            {TOUR_STEPS.map((s) => (
-              <button
-                key={s.n}
-                type="button"
-                onClick={() => onTourStep(s.n)}
-                title={s.hint}
-                className={`flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all duration-150 ${
-                  tourDone === s.n ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'hover:bg-amber-50'
-                }`}
-              >
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${tourDone === s.n ? 'bg-brand-emerald text-white' : 'bg-[#FACC15] text-slate-900'}`}>
-                  {tourDone === s.n ? <Check size={14} /> : <s.icon size={14} />}
-                </span>
-                <span>
-                  <span className="block text-xs font-extrabold text-slate-800">{s.label}</span>
-                  <span className="block text-[11px] text-slate-400">{s.hint}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </header>
   );

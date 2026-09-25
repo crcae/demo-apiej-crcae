@@ -17,7 +17,7 @@ export function ReportModal({ live, frozen, currency, fx, generatedBy, onClose }
   const vacDelta = (live.vacancyPct - frozen.vacancyPct).toFixed(1);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B192C]/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0B192C]/70 p-4" onClick={onClose}>
       <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Printable report */}
         <div id="exec-report" className="relative overflow-hidden rounded-xl bg-white shadow-2xl">

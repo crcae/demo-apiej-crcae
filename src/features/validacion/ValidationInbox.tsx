@@ -11,9 +11,11 @@ export interface PendingItem {
 interface Props {
   items: PendingItem[];
   onDecide: (item: PendingItem, to: EntityStatus, comment: string) => void;
+  /** Tour spotlight: gold pulse ring on the first pending card. */
+  spotlight?: boolean;
 }
 
-export function ValidationInbox({ items, onDecide }: Props): React.JSX.Element {
+export function ValidationInbox({ items, onDecide, spotlight = false }: Props): React.JSX.Element {
   if (items.length === 0) {
     return (
       <Card>
@@ -25,13 +27,20 @@ export function ValidationInbox({ items, onDecide }: Props): React.JSX.Element {
   }
   return (
     <div className="grid gap-3">
-      {items.map((it) => (
-        <Card key={`${it.kind}-${it.id}`}>
+      {items.map((it, idx) => (
+        <div
+          key={`${it.kind}-${it.id}`}
+          className={spotlight && idx === 0 ? 'rounded-[2rem] ring-4 ring-[#FACC15] ring-offset-2 ring-offset-[#F3F4F1] animate-pulse' : 'rounded-[2rem]'}
+        >
+        <Card>
           <CardBody>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs font-semibold uppercase text-slate-400">{it.kind}</p>
-                <h4 className="text-sm font-bold text-brand-navy">{it.title}</h4>
+                <h4 className="text-sm font-bold text-brand-navy">
+                  {it.title}
+                  {spotlight && idx === 0 && <span className="ml-2 rounded-full bg-[#FACC15] px-2 py-0.5 text-[10px] font-black text-slate-900">← aprueba aquí</span>}
+                </h4>
               </div>
               <StatusBadge status={it.status} />
             </div>
@@ -41,7 +50,7 @@ export function ValidationInbox({ items, onDecide }: Props): React.JSX.Element {
                 onClick={() => onDecide(it, 'VERIFIED', 'Aprobado por APIEJ')}
                 className="rounded-xl bg-brand-emerald px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90"
               >
-                Aprobar
+                Aprobar & Verificar
               </button>
               <button
                 type="button"
@@ -60,6 +69,7 @@ export function ValidationInbox({ items, onDecide }: Props): React.JSX.Element {
             </div>
           </CardBody>
         </Card>
+        </div>
       ))}
     </div>
   );
