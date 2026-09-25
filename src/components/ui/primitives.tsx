@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 
 export function Card({ children }: { children: ReactNode }): React.JSX.Element {
   return (
-    <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">{children}</div>
+    <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">{children}</div>
   );
 }
 
 export function CardBody({ children }: { children: ReactNode }): React.JSX.Element {
-  return <div className="p-5">{children}</div>;
+  return <div className="p-6">{children}</div>;
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }): React.JSX.Element {

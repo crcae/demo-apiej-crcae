@@ -3,9 +3,25 @@
 @tailwind utilities;
 
 body {
-  background-color: #F8FAFC;
+  background-color: #E2E8F0;
   color: #0E1A3D;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* View enter animation: fade-in + slide-up on view/persona/period switch */
+@keyframes apiej-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: apiej-rise 0.45s ease-out both;
 }
 
 /* Executive report printing: isolate the report sheet */

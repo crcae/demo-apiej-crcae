@@ -1,7 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { Presentation } from 'lucide-react';
-import { DemoRoleBar } from './components/DemoRoleBar.js';
-import { TourBanner, type TourStep } from './components/TourBanner.js';
+import { TopNav } from './components/TopNav.js';
+import type { TourStep } from './components/TopNav.js';
 import { AuditList } from './features/auditoria/AuditList.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
@@ -50,7 +49,7 @@ function App(): React.JSX.Element {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
   const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
-  const [tourOpen, setTourOpen] = useState(true);
+  const [tourOpen, setTourOpen] = useState(false);
   const [tourDone, setTourDone] = useState<TourStep | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -111,17 +110,19 @@ function App(): React.JSX.Element {
     [staff, buildings, visBuildings, parks, fx],
   );
 
-  const pendingAll: PendingItem[] = useMemo(() => [
-    ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
-    ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
-    ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
-  ], [parks, buildings, lands]);
-
-  const inboxItems = staff ? pendingAll : pendingAll.filter((it) => {
-    if (it.kind === 'BUILDING') return buildings.find((b) => b.id === it.id)?.orgId === actor.orgId;
-    if (it.kind === 'PARK') return parks.find((p) => p.id === it.id)?.orgId === actor.orgId;
-    return lands.find((l) => l.id === it.id)?.orgId === actor.orgId;
-  });
+  const inboxItems: PendingItem[] = useMemo(() => {
+    const all: PendingItem[] = [
+      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
+      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
+      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
+    ];
+    if (staff) return all;
+    return all.filter((it) => {
+      if (it.kind === 'BUILDING') return buildings.find((b) => b.id === it.id)?.orgId === actor.orgId;
+      if (it.kind === 'PARK') return parks.find((p) => p.id === it.id)?.orgId === actor.orgId;
+      return lands.find((l) => l.id === it.id)?.orgId === actor.orgId;
+    });
+  }, [parks, buildings, lands, staff, actor.orgId]);
 
   function pushAudit(e: Omit<AuditEntry, 'id' | 'createdAt'>): void {
     setAudit((prev) => [{ ...e, id: `a-${nowIso()}`, createdAt: nowIso() }, ...prev]);
@@ -221,50 +222,38 @@ function App(): React.JSX.Element {
       : ['dashboard', 'mapa', 'captura', 'validacion'];
 
   return (
-    <div className="min-h-screen bg-brand-bg">
-      <DemoRoleBar
-        active={personaKey} onSwitch={switchPersona} pendingCount={pendingAll.length}
+    <div className="flex min-h-screen justify-center bg-gradient-to-br from-[#E2E8F0] via-[#D6DCE5] to-[#E2E8F0] p-4 md:p-6 lg:p-8">
+      <div className="w-full max-w-[1600px] overflow-hidden rounded-[2.5rem] border border-white/80 bg-[#F3F4F1] p-6 shadow-2xl md:p-8">
+      <TopNav
+        persona={personaKey}
+        onPersona={switchPersona}
+        items={allowedViews.map((v) => ({
+          key: v,
+          label: VIEW_LABEL[v],
+          count: v === 'validacion' ? inboxItems.length : undefined,
+        }))}
+        activeView={view}
+        onView={(k) => setView(k as View)}
         visibleCounts={`${visParks.length} parques · ${visBuildings.length} naves · ${visLands.length} terrenos`}
+        currency={currency}
+        onCurrency={setCurrency}
+        onExport={() => setReportOpen(true)}
+        tourOpen={tourOpen}
+        onToggleTour={() => setTourOpen((o) => !o)}
+        onTourStep={handleTourStep}
+        tourDone={tourDone}
       />
-      {tourOpen && <TourBanner onStep={handleTourStep} onClose={() => setTourOpen(false)} doneStep={tourDone} />}
 
-      <div className="mx-auto flex max-w-7xl gap-4 px-4 py-5">
-        {/* Sidebar — links driven by persona */}
-        <aside className="hidden w-52 shrink-0 md:block">
-          <div className="sticky top-16 space-y-1 rounded-xl bg-[#0B192C] p-3 shadow-md">
-            <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              {persona.actor.orgName}
-            </p>
-            {allowedViews.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
-                  view === v ? 'bg-brand-blue text-white' : 'text-slate-300 hover:bg-white/10'
-                }`}
-              >
-                {VIEW_LABEL[v]}
-                {v === 'validacion' && inboxItems.length > 0 && (
-                  <span className="rounded-full bg-brand-orange px-1.5 text-[11px] text-white">{inboxItems.length}</span>
-                )}
-              </button>
-            ))}
-            <div className="mt-3 rounded-xl bg-white/5 p-2.5 text-[11px] leading-snug text-slate-300">
-              <p className="font-bold text-white">{persona.label}</p>
-              <p>{persona.description}</p>
-            </div>
-          </div>
-        </aside>
+      <div className="mx-auto max-w-7xl px-1 py-5">
 
-        {/* Mobile nav */}
-        <div className="fixed bottom-3 left-3 right-3 z-30 flex gap-1.5 md:hidden">
+        {/* Mobile nav — floating pill */}
+        <div className="fixed bottom-3 left-3 right-3 z-30 flex gap-1 rounded-full border border-slate-200/80 bg-white/85 p-1.5 shadow-lg backdrop-blur-md md:hidden">
           {allowedViews.map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`flex-1 rounded-xl px-2 py-2 text-[11px] font-bold shadow-md transition ${view === v ? 'bg-[#0B192C] text-white' : 'bg-white text-slate-600'}`}
+              className={`flex-1 rounded-full px-2 py-2 text-[11px] font-bold transition ${view === v ? 'bg-[#0B192C] text-white shadow-sm' : 'text-slate-500'}`}
             >
               {VIEW_LABEL[v]}
             </button>
@@ -272,7 +261,7 @@ function App(): React.JSX.Element {
         </div>
 
         {/* Main */}
-        <main className="min-w-0 flex-1 pb-16 md:pb-0">
+        <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter min-w-0 flex-1 pb-20 md:pb-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-extrabold text-[#0B192C]">{VIEW_LABEL[view]}</h2>
             <span className="rounded-full bg-[#0B192C] px-3 py-1 text-[11px] font-bold text-white">
@@ -281,14 +270,6 @@ function App(): React.JSX.Element {
             <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
               {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
             </span>
-            {!tourOpen && (
-              <button
-                type="button" onClick={() => setTourOpen(true)}
-                className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800 ring-1 ring-amber-200 transition hover:bg-amber-200"
-              >
-                <Presentation size={12} /> Modo Presentación
-              </button>
-            )}
           </div>
 
           {view === 'dashboard' && (
@@ -299,9 +280,10 @@ function App(): React.JSX.Element {
               live={liveKpis}
               frozen={mockQ1Kpis}
               currency={currency}
-              onCurrency={setCurrency}
               readOnly={readOnly}
-              onExport={() => setReportOpen(true)}
+              fx={fx}
+              pendingCount={inboxItems.length}
+              onGoValidation={() => setView('validacion')}
             />
           )}
 
@@ -403,10 +385,11 @@ function App(): React.JSX.Element {
       )}
 
       {toast !== null && (
-        <div className="fixed bottom-6 left-1/2 z-50 w-max max-w-[92vw] -translate-x-1/2 rounded-xl bg-[#0B192C] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
+        <div className="fixed bottom-6 left-1/2 z-50 w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
           {toast}
         </div>
       )}
+      </div>
     </div>
   );
 }

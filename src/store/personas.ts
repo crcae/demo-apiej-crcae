@@ -11,6 +11,22 @@ export interface PersonaMeta {
   actor: ActorSession;
 }
 
+/** Compact nav labels for the floating pill bar. */
+export const PERSONA_SHORT: Record<DemoPersonaKey, string> = {
+  STAFF: 'APIEJ Staff',
+  ALPHA: 'Dev Alpha',
+  BETA: 'Dev Beta',
+  MEMBER: 'Portal Público',
+};
+
+/** Plain-Spanish explanation of *why* data changes per persona (tooltips + caption). */
+export const PERSONA_WHY: Record<DemoPersonaKey, string> = {
+  STAFF: 'Ves TODO: borradores, pendientes, razones sociales reales, notas internas y auditoría.',
+  ALPHA: 'Ves SOLO propiedades de Developer Alpha (El Salto, Tlajomulco). Lo de Beta desaparece.',
+  BETA: 'Ves SOLO propiedades de Developer Beta (Zapopan, Periférico Sur). Lo de Alpha desaparece.',
+  MEMBER: 'Ves SOLO agregados verificados y anonimizados. Sin borradores, sin nombres reales, sin auditoría.',
+};
+
 export const PERSONAS: PersonaMeta[] = [
   {
     key: 'STAFF',
