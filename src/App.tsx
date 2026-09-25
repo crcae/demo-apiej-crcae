@@ -1,5 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
+import { Presentation } from 'lucide-react';
 import { DemoRoleBar } from './components/DemoRoleBar.js';
+import { TourBanner, type TourStep } from './components/TourBanner.js';
 import { AuditList } from './features/auditoria/AuditList.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
@@ -10,6 +12,7 @@ const ParkMapView = lazy(() =>
 import { BuildingForm } from './features/naves/BuildingForm.js';
 import { ParkForm } from './features/parques/ParkForm.js';
 import { LandForm } from './features/terrenos/LandForm.js';
+import { ReportModal } from './features/reportes/ReportModal.js';
 import { ValidationInbox, type PendingItem } from './features/validacion/ValidationInbox.js';
 import {
   mockAuditSeed, mockBuildings, mockLands, mockParks, mockPeriods, mockQ1Kpis,
@@ -47,6 +50,9 @@ function App(): React.JSX.Element {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
   const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
+  const [tourOpen, setTourOpen] = useState(true);
+  const [tourDone, setTourDone] = useState<TourStep | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const persona = PERSONAS.find((p) => p.key === personaKey) ?? PERSONAS[0];
   const actor = persona.actor;
@@ -65,6 +71,23 @@ function App(): React.JSX.Element {
     // Members only get Dashboard + Map; operators/staff keep current view if allowed
     if (key === 'MEMBER' && (view === 'captura' || view === 'validacion' || view === 'auditoria')) {
       setView('dashboard');
+    }
+  }
+
+  function handleTourStep(s: TourStep): void {
+    setTourDone(s);
+    if (s === 1) {
+      setView('dashboard');
+      setPeriodId('p-2026-q2');
+      flash('Paso 1: compara Q1 congelado vs Q2 activo y el desglose por corredor.');
+    } else if (s === 2) {
+      setPersonaKey('ALPHA');
+      setView('dashboard');
+      flash('Paso 2: ahora eres Developer Alpha — observa cómo cambian KPIs, mapa y listas. Prueba Beta después.');
+    } else {
+      setPersonaKey('STAFF');
+      setView('validacion');
+      flash('Paso 3: aprueba una propiedad y vuelve al Dashboard para ver el recálculo Q2 en vivo.');
     }
   }
 
@@ -199,7 +222,11 @@ function App(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <DemoRoleBar active={personaKey} onSwitch={switchPersona} pendingCount={pendingAll.length} />
+      <DemoRoleBar
+        active={personaKey} onSwitch={switchPersona} pendingCount={pendingAll.length}
+        visibleCounts={`${visParks.length} parques · ${visBuildings.length} naves · ${visLands.length} terrenos`}
+      />
+      {tourOpen && <TourBanner onStep={handleTourStep} onClose={() => setTourOpen(false)} doneStep={tourDone} />}
 
       <div className="mx-auto flex max-w-7xl gap-4 px-4 py-5">
         {/* Sidebar — links driven by persona */}
@@ -254,6 +281,14 @@ function App(): React.JSX.Element {
             <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
               {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
             </span>
+            {!tourOpen && (
+              <button
+                type="button" onClick={() => setTourOpen(true)}
+                className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800 ring-1 ring-amber-200 transition hover:bg-amber-200"
+              >
+                <Presentation size={12} /> Modo Presentación
+              </button>
+            )}
           </div>
 
           {view === 'dashboard' && (
@@ -266,6 +301,7 @@ function App(): React.JSX.Element {
               currency={currency}
               onCurrency={setCurrency}
               readOnly={readOnly}
+              onExport={() => setReportOpen(true)}
             />
           )}
 
@@ -356,6 +392,13 @@ function App(): React.JSX.Element {
           fxUsdMxn={fx}
           onClose={() => { setWizardOpen(false); setEditing(null); }}
           onSave={saveWizard}
+        />
+      )}
+
+      {reportOpen && (
+        <ReportModal
+          live={liveKpis} frozen={mockQ1Kpis} currency={currency} fx={fx}
+          generatedBy={persona.label} onClose={() => setReportOpen(false)}
         />
       )}
 

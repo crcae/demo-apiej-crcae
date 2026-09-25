@@ -7,3 +7,19 @@ body {
   color: #0E1A3D;
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* Executive report printing: isolate the report sheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #exec-report, #exec-report * {
+    visibility: visible;
+  }
+  #exec-report {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

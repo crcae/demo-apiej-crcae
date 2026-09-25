@@ -51,6 +51,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     .filter((b) => b.availabilityState === 'AVAILABLE')
     .reduce((s, b) => s + b.netRentableM2, 0);
 
+  const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
+
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
@@ -60,6 +62,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       zoom: 10,
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.on('load', () => setTileState('ready'));
+    map.on('error', () => setTileState('error'));
     mapObj.current = map;
     return () => {
       map.remove();
@@ -127,13 +131,48 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               <option value="UNDER_CONSTRUCTION">En construcción</option>
             </select>
           </div>
-          <div ref={mapRef} className="h-[480px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />
+          <div className="relative">
+            <div ref={mapRef} className="h-[480px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />
+            {tileState !== 'ready' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-slate-100/90 p-6 text-center">
+                {tileState === 'loading' ? (
+                  <>
+                    <span className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue/20 border-t-brand-blue" />
+                    <p className="text-xs font-bold text-slate-600">Cargando tiles del mapa…</p>
+                    <p className="text-[11px] text-slate-400">Los pines aparecen en cuanto el estilo termina de cargar.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-slate-700">Mapa sin conexión a tiles</p>
+                    <p className="max-w-xs text-xs text-slate-500">
+                      No se pudo cargar el estilo base (red). Usa los filtros y la ficha lateral: los datos de pines siguen disponibles abajo.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-500">
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0E1A3D' }} /> Verificado</span>
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#FF7A00' }} /> En revisión</span>
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#94a3b8' }} /> Borrador</span>
             <span className="ml-auto">{filtered.length} parques visibles (de {parks.length})</span>
           </div>
+          {tileState === 'error' && (
+            <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+              {filtered.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedId(p.id)}
+                  className={`flex items-center gap-2 rounded-xl p-2 text-left text-xs font-bold ring-1 transition hover:shadow-sm ${selectedId === p.id ? 'bg-[#0B192C] text-white ring-[#0B192C]' : 'bg-white text-slate-700 ring-slate-200'}`}
+                >
+                  <i className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: pinColor(p.status) }} />
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
         </CardBody>
       </Card>
 
