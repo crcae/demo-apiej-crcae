@@ -1,220 +1,369 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { DemoRoleBar } from './components/DemoRoleBar.js';
+import { AuditList } from './features/auditoria/AuditList.js';
+import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
+import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
+
+const ParkMapView = lazy(() =>
+  import('./features/mapa/ParkMapView.js').then((m) => ({ default: m.ParkMapView })),
+);
 import { BuildingForm } from './features/naves/BuildingForm.js';
 import { ParkForm } from './features/parques/ParkForm.js';
 import { LandForm } from './features/terrenos/LandForm.js';
 import { ValidationInbox, type PendingItem } from './features/validacion/ValidationInbox.js';
-import { mockBuildings, mockLands, mockParks, mockPeriods } from './mock/market.mock.js';
-import { listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
-import type { ActorSession, Building, EntityStatus, Land, Park } from './types/domain.js';
+import {
+  mockAuditSeed, mockBuildings, mockLands, mockParks, mockPeriods, mockQ1Kpis,
+} from './mock/market.mock.js';
+import { computeLiveKpis } from './services/analyticsService.js';
+import { isStaff, listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
+import { PERSONAS } from './store/personas.js';
+import type { AuditEntry, Building, DemoPersonaKey, EntityStatus } from './types/domain.js';
 import './App.css';
 
-type Tab = 'parques' | 'naves' | 'terrenos' | 'validacion';
+type View = 'dashboard' | 'mapa' | 'captura' | 'validacion' | 'auditoria';
 
-const STAFF: ActorSession = {
-  userId: 'staff-1', fullName: 'Validador APIEJ', isSuperAdmin: false,
-  orgId: 'org-apiej', role: 'APIEJ_STAFF',
+const VIEW_LABEL: Record<View, string> = {
+  dashboard: 'Dashboard',
+  mapa: 'Mapa GIS',
+  captura: 'Captura',
+  validacion: 'Validación',
+  auditoria: 'Auditoría',
 };
-const OPERATOR: ActorSession = {
-  userId: 'op-1', fullName: 'Operador El Salto', isSuperAdmin: false,
-  orgId: 'org-parque-salot', role: 'PARK_OPERATOR',
-};
-const OUTSIDER: ActorSession = {
-  userId: 'op-2', fullName: 'Operador otra org', isSuperAdmin: false,
-  orgId: 'org-otra', role: 'PARK_OPERATOR',
-};
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
 
 function App(): React.JSX.Element {
-  const [actor, setActor] = useState<ActorSession>(STAFF);
-  const [tab, setTab] = useState<Tab>('parques');
-  const [parks, setParks] = useState<Park[]>(mockParks);
+  const [personaKey, setPersonaKey] = useState<DemoPersonaKey>('STAFF');
+  const [view, setView] = useState<View>('dashboard');
+  const [periodId, setPeriodId] = useState('p-2026-q2');
+  const [currency, setCurrency] = useState<Currency>('USD');
+  const [parks, setParks] = useState(mockParks);
   const [buildings, setBuildings] = useState<Building[]>(mockBuildings);
-  const [lands, setLands] = useState<Land[]>(mockLands);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [lands, setLands] = useState(mockLands);
+  const [audit, setAudit] = useState<AuditEntry[]>(mockAuditSeed);
+  const [toast, setToast] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editing, setEditing] = useState<Building | null>(null);
+  const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
 
-  const isStaff = actor.role === 'APIEJ_STAFF' || actor.role === 'SUPER_ADMIN' || actor.isSuperAdmin;
+  const persona = PERSONAS.find((p) => p.key === personaKey) ?? PERSONAS[0];
+  const actor = persona.actor;
+  const staff = isStaff(actor);
+  const readOnly = actor.role === 'MEMBER_VIEWER';
+  const fx = mockPeriods.find((p) => p.id === periodId)?.fxUsdMxn ?? 17.35;
 
-  const parksRes = useMemo(() => {
-    const live = listParksFor(actor);
-    if (!live.ok) return live;
-    const ids = new Set(live.data.map((p) => p.id));
-    return { ok: true as const, data: parks.filter((p) => ids.has(p.id)) };
+  function flash(msg: string): void {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 4200);
+  }
+
+  function switchPersona(key: DemoPersonaKey): void {
+    setPersonaKey(key);
+    setToast(null);
+    // Members only get Dashboard + Map; operators/staff keep current view if allowed
+    if (key === 'MEMBER' && (view === 'captura' || view === 'validacion' || view === 'auditoria')) {
+      setView('dashboard');
+    }
+  }
+
+  // Tenant-filtered datasets (backend RLS mirrored in marketService)
+  const visParks = useMemo(() => {
+    const r = listParksFor(actor, parks);
+    return r.ok ? r.data : [];
   }, [actor, parks]);
-
-  const buildingsRes = useMemo(() => {
-    const live = listBuildingsFor(actor);
-    if (!live.ok) return live;
-    const ids = new Set(live.data.map((b) => b.id));
-    return { ok: true as const, data: buildings.filter((b) => ids.has(b.id)) };
+  const visBuildings = useMemo(() => {
+    const r = listBuildingsFor(actor, buildings);
+    return r.ok ? r.data : [];
   }, [actor, buildings]);
-
-  const landsRes = useMemo(() => {
-    const live = listLandsFor(actor);
-    if (!live.ok) return live;
-    const ids = new Set(live.data.map((l) => l.id));
-    return { ok: true as const, data: lands.filter((l) => ids.has(l.id)) };
+  const visLands = useMemo(() => {
+    const r = listLandsFor(actor, lands);
+    return r.ok ? r.data : [];
   }, [actor, lands]);
 
-  function transition(list: EntityStatus, to: EntityStatus, allowed: EntityStatus[]): boolean {
-    void list;
-    return allowed.includes(to);
+  // Live Q2 market aggregates — recalculated on every approval (Q1 stays frozen)
+  const liveKpis = useMemo(
+    () => computeLiveKpis(staff ? buildings : visBuildings, parks, 'p-2026-q2', fx),
+    [staff, buildings, visBuildings, parks, fx],
+  );
+
+  const pendingAll: PendingItem[] = useMemo(() => [
+    ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
+    ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
+    ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
+  ], [parks, buildings, lands]);
+
+  const inboxItems = staff ? pendingAll : pendingAll.filter((it) => {
+    if (it.kind === 'BUILDING') return buildings.find((b) => b.id === it.id)?.orgId === actor.orgId;
+    if (it.kind === 'PARK') return parks.find((p) => p.id === it.id)?.orgId === actor.orgId;
+    return lands.find((l) => l.id === it.id)?.orgId === actor.orgId;
+  });
+
+  function pushAudit(e: Omit<AuditEntry, 'id' | 'createdAt'>): void {
+    setAudit((prev) => [{ ...e, id: `a-${nowIso()}`, createdAt: nowIso() }, ...prev]);
   }
 
-  function handleParkReview(id: string, to: EntityStatus, comment?: string): void {
-    setParks((prev) => {
-      const cur = prev.find((p) => p.id === id);
-      if (!cur) return prev;
-      // Operator path: only submit; Staff path: approve/request/reject (mirrors backend authorizeTransition)
-      if (!isStaff && !(cur.status === 'DRAFT' && to === 'PENDING_VALIDATION') && !(cur.status === 'CHANGES_REQUESTED' && to === 'PENDING_VALIDATION')) {
-        setNotice('403 Forbidden: los operadores solo pueden enviar a validación.');
-        return prev;
-      }
-      if (!transition(cur.status, to, [to]) && false) return prev;
-      setNotice(`Park ${cur.slug}: ${cur.status} → ${to}${comment ? ` — ${comment}` : ''}. Al aprobar se congela snapshot del trimestre activo (Q1 intacto).`);
-      return prev.map((p) => (p.id === id ? { ...p, status: to, updatedAt: new Date().toISOString() } : p));
+  // --- Validation transitions (mirror backend authorizeTransition) ---
+  function decide(item: PendingItem, to: EntityStatus, comment: string): void {
+    if (!staff) {
+      flash('403 Forbidden — solo APIEJ Staff puede aprobar.');
+      return;
+    }
+    if (item.kind === 'BUILDING') {
+      setBuildings((prev) => prev.map((b) => (b.id === item.id ? { ...b, status: to, visibility: to === 'VERIFIED' ? 'SHARED' : b.visibility, updatedAt: nowIso() } : b)));
+    } else if (item.kind === 'PARK') {
+      setParks((prev) => prev.map((p) => (p.id === item.id ? { ...p, status: to, updatedAt: nowIso() } : p)));
+    } else {
+      setLands((prev) => prev.map((l) => (l.id === item.id ? { ...l, status: to, updatedAt: nowIso() } : l)));
+    }
+    pushAudit({
+      actorName: actor.fullName, action: 'STATUS_CHANGE', entityType: item.kind,
+      entityLabel: item.title, detail: `PENDING_VALIDATION → ${to} · ${comment}`,
     });
+    if (to === 'VERIFIED') {
+      flash(`✓ ${item.title} verificada — snapshot Q2 recalculado en Dashboard · Q1 intacto.`);
+      setView('dashboard');
+      setPeriodId('p-2026-q2');
+    } else {
+      flash(`${item.title}: ${to} — ${comment}`);
+    }
   }
 
-  function handleBuildingReview(id: string, to: EntityStatus, comment?: string): void {
-    setBuildings((prev) => {
-      const cur = prev.find((b) => b.id === id);
-      if (!cur) return prev;
-      if (!isStaff && !(cur.status === 'DRAFT' && to === 'PENDING_VALIDATION') && !(cur.status === 'CHANGES_REQUESTED' && to === 'PENDING_VALIDATION')) {
-        setNotice('403 Forbidden: los operadores solo pueden enviar a validación.');
-        return prev;
-      }
-      setNotice(`Nave ${cur.code}: ${cur.status} → ${to}${comment ? ` — ${comment}` : ''}. Snapshot Q1 preservado; cambios aplican al trimestre activo.`);
-      return prev.map((b) => (b.id === id ? { ...b, status: to, updatedAt: new Date().toISOString() } : b));
+  function submitForReview(kind: 'PARK' | 'BUILDING' | 'LAND', id: string, to: EntityStatus, comment?: string): void {
+    const apply = <T extends { id: string; status: EntityStatus }>(rows: T[]): T[] =>
+      rows.map((r) => (r.id === id ? { ...r, status: to } : r));
+    if (!staff && to !== 'PENDING_VALIDATION') {
+      flash('403 Forbidden — los operadores solo pueden enviar a validación.');
+      return;
+    }
+    if (kind === 'BUILDING') setBuildings((prev) => apply(prev));
+    else if (kind === 'PARK') setParks((prev) => apply(prev));
+    else setLands((prev) => apply(prev));
+    pushAudit({
+      actorName: actor.fullName, action: 'STATUS_CHANGE', entityType: kind,
+      entityLabel: id, detail: `→ ${to}${comment !== undefined ? ` · ${comment}` : ''}`,
     });
+    if (to === 'PENDING_VALIDATION') flash('Enviado a validación — Staff recibió alerta en el inbox.');
+    else flash(`Estado actualizado → ${to}`);
   }
 
-  function handleLandReview(id: string, to: EntityStatus, comment?: string): void {
-    setLands((prev) => {
-      const cur = prev.find((l) => l.id === id);
-      if (!cur) return prev;
-      if (!isStaff && !(cur.status === 'DRAFT' && to === 'PENDING_VALIDATION') && !(cur.status === 'CHANGES_REQUESTED' && to === 'PENDING_VALIDATION')) {
-        setNotice('403 Forbidden: los operadores solo pueden enviar a validación.');
-        return prev;
-      }
-      setNotice(`Terreno ${cur.name}: ${cur.status} → ${to}${comment ? ` — ${comment}` : ''}.`);
-      return prev.map((l) => (l.id === id ? { ...l, status: to, updatedAt: new Date().toISOString() } : l));
-    });
+  function saveWizard(d: WizardDraft, submit: boolean, editingId: string | null): void {
+    if (editingId !== null) {
+      setBuildings((prev) => prev.map((b) => (b.id === editingId ? {
+        ...b,
+        parkId: d.parkId, code: d.code, buildingClass: d.buildingClass,
+        totalGrossM2: d.totalGrossM2, netRentableM2: d.netRentableM2,
+        clearHeightM: d.clearHeightM, dockDoors: d.dockDoors, ramps: d.ramps,
+        powerKva: d.powerKva, hasGas: d.hasGas, hasCrane: d.hasCrane,
+        availabilityState: d.availabilityState,
+        askingRentUsdM2: d.askingRentUsdM2,
+        askingRentMxnM2: d.askingRentUsdM2 !== undefined ? Number((d.askingRentUsdM2 * fx).toFixed(2)) : undefined,
+        status: submit ? 'PENDING_VALIDATION' : b.status,
+        updatedAt: nowIso(),
+      } : b)));
+      pushAudit({
+        actorName: actor.fullName, action: submit ? 'STATUS_CHANGE' : 'UPDATE',
+        entityType: 'BUILDING', entityLabel: d.code,
+        detail: submit ? `Editada y enviada → PENDING_VALIDATION` : 'Borrador actualizado',
+      });
+    } else {
+      const id = `b-${d.code.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now() % 10000}`;
+      const nb: Building = {
+        id, orgId: actor.orgId, parkId: d.parkId, code: d.code, buildingClass: d.buildingClass,
+        totalGrossM2: d.totalGrossM2, netRentableM2: d.netRentableM2,
+        clearHeightM: d.clearHeightM, dockDoors: d.dockDoors, ramps: d.ramps,
+        powerKva: d.powerKva, hasGas: d.hasGas, hasCrane: d.hasCrane,
+        availabilityState: d.availabilityState, occupantAlias: 'Disponible',
+        askingRentUsdM2: d.askingRentUsdM2,
+        askingRentMxnM2: d.askingRentUsdM2 !== undefined ? Number((d.askingRentUsdM2 * fx).toFixed(2)) : undefined,
+        status: submit ? 'PENDING_VALIDATION' : 'DRAFT',
+        visibility: 'PRIVATE', updatedAt: nowIso(),
+      };
+      setBuildings((prev) => [...prev, nb]);
+      pushAudit({
+        actorName: actor.fullName, action: 'CREATE', entityType: 'BUILDING', entityLabel: d.code,
+        detail: submit ? 'Creada y enviada → PENDING_VALIDATION' : 'Borrador creado',
+      });
+    }
+    setWizardOpen(false);
+    setEditing(null);
+    flash(submit ? 'Nave enviada a validación — cambia a Staff para aprobarla.' : 'Borrador guardado.');
   }
 
-  const pending: PendingItem[] = useMemo(() => {
-    if (!isStaff) return [];
-    return [
-      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
-      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
-      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
-    ];
-  }, [parks, buildings, lands, isStaff]);
-
-  function handleDecide(item: PendingItem, to: EntityStatus, comment: string): void {
-    if (item.kind === 'PARK') handleParkReview(item.id, to, comment);
-    else if (item.kind === 'BUILDING') handleBuildingReview(item.id, to, comment);
-    else handleLandReview(item.id, to, comment);
-  }
-
-  const tabs: Array<{ key: Tab; label: string }> = [
-    { key: 'parques', label: 'Parques' },
-    { key: 'naves', label: 'Naves' },
-    { key: 'terrenos', label: 'Terrenos' },
-    { key: 'validacion', label: `Validación${pending.length > 0 ? ` (${pending.length})` : ''}` },
-  ];
+  const allowedViews: View[] = readOnly
+    ? ['dashboard', 'mapa']
+    : staff
+      ? ['dashboard', 'mapa', 'captura', 'validacion', 'auditoria']
+      : ['dashboard', 'mapa', 'captura', 'validacion'];
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <header className="bg-brand-navy text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div>
-            <h1 className="text-lg font-bold">APIEJ · CRM + Captura de Mercado — Fase 1</h1>
-            <p className="text-xs text-slate-300">Single source of truth · Snapshots Q1–Q4 · RBAC en backend</p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {[
-              { label: 'Staff APIEJ', value: STAFF },
-              { label: 'Operador (mi org)', value: OPERATOR },
-              { label: 'Operador (otra org)', value: OUTSIDER },
-            ].map((o) => (
+      <DemoRoleBar active={personaKey} onSwitch={switchPersona} pendingCount={pendingAll.length} />
+
+      <div className="mx-auto flex max-w-7xl gap-4 px-4 py-5">
+        {/* Sidebar — links driven by persona */}
+        <aside className="hidden w-52 shrink-0 md:block">
+          <div className="sticky top-16 space-y-1 rounded-xl bg-[#0B192C] p-3 shadow-md">
+            <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {persona.actor.orgName}
+            </p>
+            {allowedViews.map((v) => (
               <button
-                key={o.label}
+                key={v}
                 type="button"
-                onClick={() => { setActor(o.value); setNotice(null); }}
-                className={`rounded-xl px-3 py-2 font-bold transition ${actor.fullName === o.value.fullName ? 'bg-brand-blue text-white' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}
+                onClick={() => setView(v)}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
+                  view === v ? 'bg-brand-blue text-white' : 'text-slate-300 hover:bg-white/10'
+                }`}
               >
-                {o.label}
+                {VIEW_LABEL[v]}
+                {v === 'validacion' && inboxItems.length > 0 && (
+                  <span className="rounded-full bg-brand-orange px-1.5 text-[11px] text-white">{inboxItems.length}</span>
+                )}
               </button>
             ))}
+            <div className="mt-3 rounded-xl bg-white/5 p-2.5 text-[11px] leading-snug text-slate-300">
+              <p className="font-bold text-white">{persona.label}</p>
+              <p>{persona.description}</p>
+            </div>
           </div>
-        </div>
-      </header>
+        </aside>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-brand-navy px-3 py-1 text-xs font-bold text-white">
-            {actor.fullName} · {actor.role} · {actor.orgId}
-          </span>
-          {mockPeriods.map((p) => (
-            <span key={p.id} className={`rounded-full px-3 py-1 text-xs font-bold ${p.isClosed ? 'bg-slate-200 text-slate-700' : 'bg-brand-emerald/15 text-brand-emerald'}`}>
-              {p.label} {p.isClosed ? '· cerrado (inmutable)' : '· activo'}
-            </span>
-          ))}
-        </div>
-
-        {notice !== null && (
-          <div className="mb-4 rounded-xl bg-brand-blue/10 p-3 text-sm text-brand-navy ring-1 ring-brand-blue/20">{notice}</div>
-        )}
-
-        <nav className="mb-4 flex gap-2">
-          {tabs.map((t) => (
+        {/* Mobile nav */}
+        <div className="fixed bottom-3 left-3 right-3 z-30 flex gap-1.5 md:hidden">
+          {allowedViews.map((v) => (
             <button
-              key={t.key}
+              key={v}
               type="button"
-              onClick={() => setTab(t.key)}
-              className={`rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition ${tab === t.key ? 'bg-brand-navy text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}
+              onClick={() => setView(v)}
+              className={`flex-1 rounded-xl px-2 py-2 text-[11px] font-bold shadow-md transition ${view === v ? 'bg-[#0B192C] text-white' : 'bg-white text-slate-600'}`}
             >
-              {t.label}
+              {VIEW_LABEL[v]}
             </button>
           ))}
-        </nav>
+        </div>
 
-        {tab === 'parques' && (
-          <div className="grid gap-3">
-            {!parksRes.ok && <div className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">403 — {parksRes.message}</div>}
-            {parksRes.ok && parksRes.data.length === 0 && <div className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin resultados: aislamiento por tenant (otra organización / sin acceso).</div>}
-            {parksRes.ok && parksRes.data.map((p) => (
-              <ParkForm key={p.id} park={p} isStaff={isStaff} onSubmitForReview={handleParkReview} />
-            ))}
+        {/* Main */}
+        <main className="min-w-0 flex-1 pb-16 md:pb-0">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-extrabold text-[#0B192C]">{VIEW_LABEL[view]}</h2>
+            <span className="rounded-full bg-[#0B192C] px-3 py-1 text-[11px] font-bold text-white">
+              {persona.label} · {actor.orgName}
+            </span>
+            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+              {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
+            </span>
           </div>
-        )}
 
-        {tab === 'naves' && (
-          <div className="grid gap-3">
-            {!buildingsRes.ok && <div className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">403 — {buildingsRes.message}</div>}
-            {buildingsRes.ok && buildingsRes.data.length === 0 && <div className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin resultados: aislamiento por tenant.</div>}
-            {buildingsRes.ok && buildingsRes.data.map((b) => (
-              <BuildingForm key={b.id} building={b} isStaff={isStaff} onSubmitForReview={handleBuildingReview} />
-            ))}
-          </div>
-        )}
+          {view === 'dashboard' && (
+            <Dashboard
+              periods={mockPeriods}
+              activePeriodId={periodId}
+              onPeriod={setPeriodId}
+              live={liveKpis}
+              frozen={mockQ1Kpis}
+              currency={currency}
+              onCurrency={setCurrency}
+              readOnly={readOnly}
+            />
+          )}
 
-        {tab === 'terrenos' && (
-          <div className="grid gap-3">
-            {!landsRes.ok && <div className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">403 — {landsRes.message}</div>}
-            {landsRes.ok && landsRes.data.length === 0 && <div className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin resultados: aislamiento por tenant.</div>}
-            {landsRes.ok && landsRes.data.map((l) => (
-              <LandForm key={l.id} land={l} onSubmitForReview={handleLandReview} />
-            ))}
-          </div>
-        )}
+          {view === 'mapa' && (
+            <Suspense fallback={<p className="rounded-xl bg-white p-6 text-sm text-slate-500 shadow-sm">Cargando mapa GIS…</p>}>
+              <ParkMapView parks={visParks} buildings={visBuildings} lands={visLands} isStaff={staff} />
+            </Suspense>
+          )}
 
-        {tab === 'validacion' && (
-          <div>
-            {!isStaff && <div className="mb-3 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">403 Forbidden — solo APIEJ Staff / Super Admin.</div>}
-            {isStaff && <ValidationInbox items={pending} onDecide={handleDecide} />}
-          </div>
-        )}
-      </main>
+          {view === 'captura' && !readOnly && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {(['parques', 'naves', 'terrenos'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setCaptureTab(t)}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold capitalize transition ${captureTab === t ? 'bg-[#0B192C] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+                {captureTab === 'naves' && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(null); setWizardOpen(true); }}
+                    className="ml-auto rounded-xl bg-brand-emerald px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
+                  >
+                    + Nueva nave (wizard)
+                  </button>
+                )}
+              </div>
+              {captureTab === 'parques' && visParks.map((p) => (
+                <ParkForm key={p.id} park={p} isStaff={staff} onSubmitForReview={(id, to, c) => submitForReview('PARK', id, to, c)} />
+              ))}
+              {captureTab === 'naves' && (
+                <>
+                  {visBuildings.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin naves visibles para tu organización (aislamiento por tenant).</p>}
+                  {visBuildings.map((b) => (
+                    <div key={b.id} className="space-y-1">
+                      <BuildingForm building={b} isStaff={staff} onSubmitForReview={(id, to, c) => submitForReview('BUILDING', id, to, c)} />
+                      {!readOnly && (
+                        <button type="button" onClick={() => { setEditing(b); setWizardOpen(true); }} className="text-xs font-bold text-brand-blue hover:underline">
+                          Editar en wizard →
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+              {captureTab === 'terrenos' && visLands.map((l) => (
+                <LandForm key={l.id} land={l} onSubmitForReview={(id, to, c) => submitForReview('LAND', id, to, c)} />
+              ))}
+            </div>
+          )}
+
+          {view === 'validacion' && (
+            <div>
+              {!staff && (
+                <p className="mb-3 rounded-xl bg-brand-orange/10 p-3 text-xs font-semibold text-amber-800 ring-1 ring-brand-orange/20">
+                  Vista de operador: ves tus envíos y su estado. Solo Staff puede aprobar (botones deshabilitados por backend).
+                </p>
+              )}
+              {staff ? (
+                <ValidationInbox items={inboxItems} onDecide={decide} />
+              ) : (
+                <div className="space-y-2">
+                  {inboxItems.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin envíos pendientes de tu organización.</p>}
+                  {inboxItems.map((it) => (
+                    <div key={`${it.kind}-${it.id}`} className="flex items-center justify-between rounded-xl bg-white p-3 text-sm shadow-sm ring-1 ring-slate-200">
+                      <span className="font-bold text-brand-navy">{it.title}</span>
+                      <span className="rounded-full bg-brand-orange/10 px-2.5 py-0.5 text-xs font-bold text-brand-orange">{it.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {view === 'auditoria' && <AuditList entries={audit} isStaff={staff} />}
+        </main>
+      </div>
+
+      {wizardOpen && !readOnly && (
+        <CaptureWizard
+          parks={visParks.length > 0 ? visParks : parks.filter((p) => p.orgId === actor.orgId)}
+          editing={editing}
+          fxUsdMxn={fx}
+          onClose={() => { setWizardOpen(false); setEditing(null); }}
+          onSave={saveWizard}
+        />
+      )}
+
+      {toast !== null && (
+        <div className="fixed bottom-6 left-1/2 z-50 w-max max-w-[92vw] -translate-x-1/2 rounded-xl bg-[#0B192C] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
