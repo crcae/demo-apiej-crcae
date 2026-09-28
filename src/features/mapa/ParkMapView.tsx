@@ -5,28 +5,23 @@ import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
 
-// Bulletproof raster style: tiles load straight from Carto CDN with zero
-// third-party style-JSON requests (no CORS / 404 / SSL failure surface).
-const BULLETPROOF_MAP_STYLE: maplibregl.StyleSpecification = {
+// Keyless OSM raster style: 100% free OpenStreetMap standard tiles, zero
+// API keys, zero style-JSON requests (no watermark / CORS / 404 surface).
+const KEYLESS_OSM_MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    'carto-light-tiles': {
+    'osm-tiles': {
       type: 'raster',
-      tiles: [
-        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      ],
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
       tileSize: 256,
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     },
   },
   layers: [
     {
-      id: 'carto-light-layer',
+      id: 'osm-tiles-layer',
       type: 'raster',
-      source: 'carto-light-tiles',
+      source: 'osm-tiles',
       minzoom: 0,
       maxzoom: 19,
     },
@@ -85,7 +80,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: BULLETPROOF_MAP_STYLE,
+      style: KEYLESS_OSM_MAP_STYLE,
       center: GDL,
       zoom: 10,
       attributionControl: { compact: true },

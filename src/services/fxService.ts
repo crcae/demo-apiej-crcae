@@ -1,23 +1,42 @@
 // Live USD/MXN rate with frozen-period fallback.
-// Primary: open.er-api.com (free, no key). Never throws — returns null on any
-// failure so the UI always falls back to the period's frozen Banxico rate.
+// Multi-source real-time fetcher (free, keyless):
+//   Primary:  api.exchangerate-api.com/v4/latest/USD  -> rates.MXN
+//   Fallback: jsdelivr fawazahmed0 currency-api        -> usd.mxn
+// Never throws — returns null on any failure so the UI always falls back
+// to the period's frozen Banxico rate. Rates rounded to 2 decimals.
 
 export const FX_FALLBACK = 17.35;
-const ENDPOINT = 'https://open.er-api.com/v6/latest/USD';
+const PRIMARY = 'https://api.exchangerate-api.com/v4/latest/USD';
+const FALLBACK = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
 const TIMEOUT_MS = 8000;
 
 let cached: number | null = null;
 let inFlight: Promise<number | null> | null = null;
 
-async function fetchOnce(signal: AbortSignal): Promise<number | null> {
-  const res = await fetch(ENDPOINT, { signal });
+function validRate(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : null;
+}
+
+async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
+  const res = await fetch(url, { signal });
   if (!res.ok) return null;
-  const body = (await res.json()) as { result?: string; rates?: { MXN?: number } };
-  const mxn = body.rates?.MXN;
-  if (body.result !== 'success' || typeof mxn !== 'number' || !Number.isFinite(mxn) || mxn <= 0) {
-    return null;
-  }
-  return mxn;
+  return (await res.json()) as unknown;
+}
+
+async function fetchPrimary(signal: AbortSignal): Promise<number | null> {
+  const body = (await getJson(PRIMARY, signal)) as { rates?: { MXN?: unknown } } | null;
+  return body === null ? null : validRate(body.rates?.MXN);
+}
+
+async function fetchFallback(signal: AbortSignal): Promise<number | null> {
+  const body = (await getJson(FALLBACK, signal)) as { usd?: { mxn?: unknown } } | null;
+  return body === null ? null : validRate(body.usd?.mxn);
+}
+
+async function fetchOnce(signal: AbortSignal): Promise<number | null> {
+  const primary = await fetchPrimary(signal).catch(() => null);
+  if (primary !== null) return primary;
+  return fetchFallback(signal).catch(() => null);
 }
 
 /** Fetch live USD→MXN. Cached after first success; concurrent callers share one request. */
