@@ -26,7 +26,7 @@ export function ReportModal({ live, frozen, currency, fx, generatedBy, onClose }
             APIEJ
           </span>
           <div className="relative border-b-4 border-brand-blue bg-[#0B192C] px-8 py-6 text-white">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">APIEJ · Inteligencia de Mercado Industrial</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">APIEJ · Inteligencia de Mercado Industrial</p>
             <h2 className="mt-1 text-2xl font-black">Reporte Trimestral Q2 2026 — Jalisco</h2>
             <p className="mt-1 text-xs text-slate-300">
               Fuente única de verdad · Snapshot Q1 congelado vs Q2 activo · Tipo de cambio Banxico ${fx.toFixed(2)} MXN/USD
@@ -63,7 +63,7 @@ export function ReportModal({ live, frozen, currency, fx, generatedBy, onClose }
                 ))}
               </tbody>
             </table>
-            <div className="mt-6 flex items-end justify-between border-t border-slate-200 pt-4 text-[11px] text-slate-400">
+            <div className="mt-6 flex items-end justify-between border-t border-slate-200 pt-4 text-[11px] text-slate-500">
               <p>Generado por {generatedBy} · {new Date().toLocaleString()} · Documento demostrativo</p>
               <p className="font-bold text-[#0B192C]">APIEJ — Una sola fuente de verdad</p>
             </div>
@@ -73,7 +73,7 @@ export function ReportModal({ live, frozen, currency, fx, generatedBy, onClose }
         <div className="mt-3 flex justify-end gap-2 print:hidden">
           <button
             type="button" onClick={onClose}
-            className="flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20"
+            className="flex items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-white ring-1 ring-slate-700 transition hover:bg-slate-700"
           >
             <X size={14} /> Cerrar
           </button>

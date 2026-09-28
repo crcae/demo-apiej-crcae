@@ -83,7 +83,7 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
               <h3 className="text-sm font-extrabold text-[#0B192C]">
                 {editing ? `Editar nave ${editing.code}` : 'Nueva nave'} · Wizard de captura
               </h3>
-              <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-xs font-bold text-slate-400 hover:bg-slate-100">✕</button>
+              <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100">✕</button>
             </div>
             <div className="mb-4 flex gap-1.5">
               {[1, 2, 3].map((s) => (
@@ -194,7 +194,7 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
                     </button>
                     <button
                       type="button" onClick={() => { if (valid()) onSave(draft(), true, editing?.id ?? null); }}
-                      className="rounded-xl bg-brand-orange px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
+                      className="rounded-xl bg-[#2563EB] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
                     >
                       Enviar a validación
                     </button>

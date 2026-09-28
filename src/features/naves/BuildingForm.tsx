@@ -40,12 +40,12 @@ export function BuildingForm({ building, isStaff, onSubmitForReview }: Props): R
             <input className={inputCls} inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} />
           </Field>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs font-medium text-slate-700">
           Bruta: {formatAreaM2(building.totalGrossM2)} · Rentable: {formatAreaM2(building.netRentableM2)} · Renta: {formatUsdM2(building.askingRentUsdM2)} · {building.availabilityState}
           {building.hasGas ? ' · Gas' : ''}{building.powerKva ? ` · ${building.powerKva} kVA` : ''}
         </p>
         {!isStaff && (
-          <p className="mt-1 text-[11px] text-slate-400">Nombre del ocupante y negociaciones ocultos por política de visibilidad (backend).</p>
+          <p className="mt-1 text-[11px] text-slate-500">Nombre del ocupante y negociaciones ocultos por política de visibilidad (backend).</p>
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Field label="Comentario">
@@ -56,7 +56,7 @@ export function BuildingForm({ building, isStaff, onSubmitForReview }: Props): R
               key={to}
               type="button"
               onClick={() => onSubmitForReview(building.id, to, comment || undefined)}
-              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-brand-orange' : 'bg-brand-blue'}`}
+              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-[#2563EB]' : 'bg-brand-blue'}`}
             >
               {to === 'PENDING_VALIDATION' ? 'Enviar a validación' : to}
             </button>

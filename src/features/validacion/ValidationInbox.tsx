@@ -30,16 +30,16 @@ export function ValidationInbox({ items, onDecide, spotlight = false }: Props): 
       {items.map((it, idx) => (
         <div
           key={`${it.kind}-${it.id}`}
-          className={spotlight && idx === 0 ? 'rounded-[2rem] ring-4 ring-[#FACC15] ring-offset-2 ring-offset-[#F3F4F1] animate-pulse' : 'rounded-[2rem]'}
+          className={spotlight && idx === 0 ? 'rounded-[2rem] ring-4 ring-emerald-500 ring-offset-2 ring-offset-[#EBF0F5] animate-pulse' : 'rounded-[2rem]'}
         >
         <Card>
           <CardBody>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-400">{it.kind}</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">{it.kind}</p>
                 <h4 className="text-sm font-bold text-brand-navy">
                   {it.title}
-                  {spotlight && idx === 0 && <span className="ml-2 rounded-full bg-[#FACC15] px-2 py-0.5 text-[10px] font-black text-slate-900">← aprueba aquí</span>}
+                  {spotlight && idx === 0 && <span className="ml-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white">← aprueba aquí</span>}
                 </h4>
               </div>
               <StatusBadge status={it.status} />
@@ -55,7 +55,7 @@ export function ValidationInbox({ items, onDecide, spotlight = false }: Props): 
               <button
                 type="button"
                 onClick={() => onDecide(it, 'CHANGES_REQUESTED', 'Ajustar superficies y evidencia fotográfica')}
-                className="rounded-xl bg-brand-orange px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90"
+                className="rounded-xl bg-[#2563EB] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90"
               >
                 Solicitar cambios
               </button>

@@ -10,7 +10,7 @@ const GDL: [number, number] = [-103.33, 20.62];
 
 function pinColor(status: Park['status']): string {
   if (status === 'VERIFIED') return '#0E1A3D';
-  if (status === 'PENDING_VALIDATION') return '#FF7A00';
+  if (status === 'PENDING_VALIDATION') return '#2563EB';
   return '#94a3b8';
 }
 
@@ -101,7 +101,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     }
   }, [filtered]);
 
-  const selCls = 'w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-brand-blue';
+  const selCls = 'w-full rounded-xl border border-white/60 bg-[#E0E5EC] px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none';
 
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
@@ -134,12 +134,12 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           <div className="relative">
             <div ref={mapRef} className="h-[480px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />
             {tileState !== 'ready' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-slate-100/90 p-6 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-[#EBF0F5] p-6 text-center">
                 {tileState === 'loading' ? (
                   <>
                     <span className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue/20 border-t-brand-blue" />
                     <p className="text-xs font-bold text-slate-600">Cargando tiles del mapa…</p>
-                    <p className="text-[11px] text-slate-400">Los pines aparecen en cuanto el estilo termina de cargar.</p>
+                    <p className="text-[11px] text-slate-500">Los pines aparecen en cuanto el estilo termina de cargar.</p>
                   </>
                 ) : (
                   <>
@@ -152,9 +152,9 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               </div>
             )}
           </div>
-          <div className="mt-2 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-500">
+          <div className="mt-2 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-600">
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0E1A3D' }} /> Verificado</span>
-            <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#FF7A00' }} /> En revisión</span>
+            <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#2563EB' }} /> En revisión</span>
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#94a3b8' }} /> Borrador</span>
             <span className="ml-auto">{filtered.length} parques visibles (de {parks.length})</span>
           </div>
@@ -188,18 +188,18 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
             <div>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[11px] font-bold uppercase text-slate-400">{selected.corridor} · {selected.municipality}</p>
+                  <p className="text-[11px] font-bold uppercase text-slate-500">{selected.corridor} · {selected.municipality}</p>
                   <h3 className="text-sm font-extrabold text-[#0B192C]">{selected.name}</h3>
                 </div>
                 <StatusBadge status={selected.status} />
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-400">Total</dt><dd className="font-bold">{formatAreaM2(selected.totalLandM2)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-400">Disponible (naves)</dt><dd className="font-bold text-brand-emerald">{formatAreaM2(selAvailable)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-400">Desarrollado</dt><dd className="font-bold">{formatAreaM2(selected.developedM2)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-400">Reserva</dt><dd className="font-bold">{formatAreaM2(selected.reserveM2)}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Total</dt><dd className="font-bold">{formatAreaM2(selected.totalLandM2)}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Disponible (naves)</dt><dd className="font-bold text-brand-emerald">{formatAreaM2(selAvailable)}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Desarrollado</dt><dd className="font-bold">{formatAreaM2(selected.developedM2)}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Reserva</dt><dd className="font-bold">{formatAreaM2(selected.reserveM2)}</dd></div>
               </dl>
-              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Infraestructura</h4>
+              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Infraestructura</h4>
               <ul className="grid grid-cols-2 gap-1 text-xs">
                 {(
                   [
@@ -211,18 +211,18 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     ['Seguridad 24/7', selected.infrastructure.security === true],
                   ] as Array<[string, boolean]>
                 ).map(([label, ok]) => (
-                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-slate-100 text-slate-400'}`}>
+                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-slate-100 text-slate-500'}`}>
                     {ok === true ? '✓ ' : '✕ '}{label}
                   </li>
                 ))}
               </ul>
-              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Naves ({selBuildings.length})</h4>
+              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Naves ({selBuildings.length})</h4>
               <ul className="space-y-1.5">
                 {selBuildings.map((b) => (
                   <li key={b.id} className="rounded-xl bg-slate-50 p-2 text-xs ring-1 ring-slate-100">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800">{b.code} · Clase {b.buildingClass}</span>
-                      <span className="text-slate-400">{b.availabilityState}</span>
+                      <span className="text-slate-500">{b.availabilityState}</span>
                     </div>
                     <p className="text-slate-500">
                       {formatAreaM2(b.netRentableM2)} · {formatUsdM2(b.askingRentUsdM2)} ·{' '}
@@ -234,11 +234,11 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     </p>
                   </li>
                 ))}
-                {selBuildings.length === 0 && <li className="text-xs text-slate-400">Sin naves registradas.</li>}
+                {selBuildings.length === 0 && <li className="text-xs text-slate-500">Sin naves registradas.</li>}
               </ul>
               {selLands.length > 0 && (
                 <>
-                  <h4 className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Terrenos ({selLands.length})</h4>
+                  <h4 className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-600">Terrenos ({selLands.length})</h4>
                   <ul className="space-y-1.5">
                     {selLands.map((l) => (
                       <li key={l.id} className="rounded-xl bg-slate-50 p-2 text-xs text-slate-600 ring-1 ring-slate-100">

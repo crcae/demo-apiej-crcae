@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { TopNav } from './components/TopNav.js';
-import type { TourStep } from './components/TopNav.js';
+import { Sidebar } from './components/Sidebar.js';
+import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
 import { AuditList } from './features/auditoria/AuditList.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
@@ -309,11 +309,9 @@ function App(): React.JSX.Element {
       : ['dashboard', 'mapa', 'captura', 'validacion'];
 
   return (
-    <div className="flex min-h-screen justify-center bg-gradient-to-br from-[#E8D8CD] via-[#E2D5C8] to-[#CBD5E1] p-4 md:p-8">
-      <div className="w-full max-w-[1600px] overflow-hidden rounded-[2.5rem] border border-white/80 bg-[#F4F1EB]/80 p-6 shadow-2xl backdrop-blur-sm md:p-8">
-      <TopNav
-        persona={personaKey}
-        onPersona={switchPersona}
+    <div className="min-h-screen w-full bg-[#EBF0F5]">
+      <div className="mx-auto flex w-full max-w-[1600px] items-start gap-6 px-4 py-6 md:px-6">
+      <Sidebar
         items={allowedViews.map((v) => ({
           key: v,
           label: VIEW_LABEL[v],
@@ -321,21 +319,13 @@ function App(): React.JSX.Element {
         }))}
         activeView={view}
         onView={(k) => setView(k as View)}
+        persona={personaKey}
+        onPersona={switchPersona}
+        orgName={actor.orgName}
         visibleCounts={`${visParks.length} parques · ${visBuildings.length} naves · ${visLands.length} terrenos`}
-        currency={currency}
-        onCurrency={setCurrency}
-        onExport={() => setReportOpen(true)}
-        onOpenTour={() => {
-          setTourStep(1);
-          // applyTourStep(1) runs on next tick via effect-free direct calls:
-          switchPersona('STAFF');
-          setView('dashboard');
-          setPeriodId('p-2026-q1');
-          flash('Paso 1: Q1 congelado (inmutable). Cambia USD/MXN arriba: el FX Banxico convierte al instante.');
-        }}
       />
-
-      <div className="mx-auto max-w-7xl px-1 pt-4">
+      <div className="min-w-0 flex-1">
+      <div className="px-1 pt-1">
       {tourStep !== null && (
         <TourDock
           step={tourStep}
@@ -351,14 +341,14 @@ function App(): React.JSX.Element {
         />
       )}
 
-        {/* Mobile nav — floating pill */}
-        <div className="fixed bottom-3 left-3 right-3 z-[80] flex gap-1 rounded-full border border-slate-200/80 bg-white/85 p-1.5 shadow-lg backdrop-blur-md md:hidden">
+        {/* Mobile nav — neu pill */}
+        <div className="fixed bottom-3 left-3 right-3 z-[80] flex gap-1 rounded-full border border-white/60 bg-[#EBF0F5] p-1.5 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff] md:hidden">
           {allowedViews.map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`flex-1 rounded-full px-2 py-2 text-[11px] font-bold transition ${view === v ? 'bg-[#0B192C] text-white shadow-sm' : 'text-slate-500'}`}
+              className={`flex-1 rounded-full px-2 py-2 text-[11px] font-bold transition ${view === v ? 'bg-[#0F172A] text-white shadow-sm' : 'text-slate-600'}`}
             >
               {VIEW_LABEL[v]}
             </button>
@@ -368,8 +358,8 @@ function App(): React.JSX.Element {
         {/* Main */}
         <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter relative z-10 min-w-0 flex-1 pb-20 md:pb-0">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-extrabold tracking-tight text-[#0F172A]">{VIEW_LABEL[view]}</h2>
-            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+            <h2 className="font-display text-lg font-extrabold tracking-tight text-[#0F172A]">{VIEW_LABEL[view]}</h2>
+            <span className="rounded-full bg-[#E2E8F0] px-3 py-1 text-[11px] font-bold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
               {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
             </span>
           </div>
@@ -382,15 +372,24 @@ function App(): React.JSX.Element {
               live={liveKpis}
               frozen={mockQ1Kpis}
               currency={currency}
+              onCurrency={setCurrency}
               readOnly={readOnly}
               fx={fx}
               pendingCount={inboxItems.length}
               onGoValidation={() => setView('validacion')}
+              onExport={() => setReportOpen(true)}
+              onOpenTour={() => {
+                setTourStep(1);
+                switchPersona('STAFF');
+                setView('dashboard');
+                setPeriodId('p-2026-q1');
+                flash('Paso 1: Q1 congelado (inmutable). Prueba cambiar entre USD y MXN.');
+              }}
             />
           )}
 
           {view === 'mapa' && (
-            <Suspense fallback={<p className="rounded-xl bg-white p-6 text-sm text-slate-500 shadow-sm">Cargando mapa GIS…</p>}>
+            <Suspense fallback={<p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-6 text-sm font-medium text-slate-600 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Cargando mapa GIS…</p>}>
               <ParkMapView parks={visParks} buildings={visBuildings} lands={visLands} isStaff={staff} />
             </Suspense>
           )}
@@ -403,7 +402,7 @@ function App(): React.JSX.Element {
                     key={t}
                     type="button"
                     onClick={() => setCaptureTab(t)}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold capitalize transition ${captureTab === t ? 'bg-[#0B192C] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold capitalize transition ${captureTab === t ? 'bg-[#0F172A] text-white shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]' : 'bg-[#EBF0F5] text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]'}`}
                   >
                     {t}
                   </button>
@@ -423,7 +422,7 @@ function App(): React.JSX.Element {
               ))}
               {captureTab === 'naves' && (
                 <>
-                  {visBuildings.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin naves visibles para tu organización (aislamiento por tenant).</p>}
+                  {visBuildings.length === 0 && <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-sm font-medium text-slate-700 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Sin naves visibles para tu organización (aislamiento por tenant).</p>}
                   {visBuildings.map((b) => (
                     <div key={b.id} className="space-y-1">
                       <BuildingForm building={b} isStaff={staff} onSubmitForReview={(id, to, c) => submitForReview('BUILDING', id, to, c)} />
@@ -445,7 +444,7 @@ function App(): React.JSX.Element {
           {view === 'validacion' && (
             <div>
               {!staff && (
-                <p className="mb-3 rounded-xl bg-brand-orange/10 p-3 text-xs font-semibold text-amber-800 ring-1 ring-brand-orange/20">
+                <p className="mb-3 rounded-xl bg-[#2563EB]/10 p-3 text-xs font-semibold text-[#1D4ED8] ring-1 ring-[#2563EB]/20">
                   Vista de operador: ves tus envíos y su estado. Solo Staff puede aprobar (botones deshabilitados por backend).
                 </p>
               )}
@@ -453,11 +452,11 @@ function App(): React.JSX.Element {
                 <ValidationInbox items={inboxItems} onDecide={decide} spotlight={tourStep === 3 || tourStep === 4} />
               ) : (
                 <div className="space-y-2">
-                  {inboxItems.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Sin envíos pendientes de tu organización.</p>}
+                  {inboxItems.length === 0 && <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-sm font-medium text-slate-700 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Sin envíos pendientes de tu organización.</p>}
                   {inboxItems.map((it) => (
-                    <div key={`${it.kind}-${it.id}`} className="flex items-center justify-between rounded-xl bg-white p-3 text-sm shadow-sm ring-1 ring-slate-200">
-                      <span className="font-bold text-brand-navy">{it.title}</span>
-                      <span className="rounded-full bg-brand-orange/10 px-2.5 py-0.5 text-xs font-bold text-brand-orange">{it.status}</span>
+                    <div key={`${it.kind}-${it.id}`} className="flex items-center justify-between rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-3 pl-5 text-sm shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">
+                      <span className="font-bold text-[#0F172A]">{it.title}</span>
+                      <span className="rounded-full bg-[#2563EB]/10 px-2.5 py-0.5 text-xs font-bold text-[#2563EB]">{it.status}</span>
                     </div>
                   ))}
                 </div>
@@ -491,6 +490,7 @@ function App(): React.JSX.Element {
           {toast}
         </div>
       )}
+      </div>
       </div>
     </div>
   );

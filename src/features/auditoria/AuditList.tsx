@@ -4,7 +4,7 @@ import { Card, CardBody } from '../../components/ui/primitives.js';
 const actionColor: Record<AuditEntry['action'], string> = {
   CREATE: 'bg-brand-blue/10 text-brand-blue',
   UPDATE: 'bg-slate-100 text-slate-600',
-  STATUS_CHANGE: 'bg-brand-orange/10 text-brand-orange',
+  STATUS_CHANGE: 'bg-[#2563EB]/10 text-[#2563EB]',
   SNAPSHOT_CLOSE: 'bg-brand-emerald/10 text-brand-emerald',
   EXPORT: 'bg-purple-50 text-purple-600',
 };
@@ -35,7 +35,7 @@ export function AuditList({ entries, isStaff }: { entries: AuditEntry[]; isStaff
                 </p>
                 <p className="text-xs text-slate-500">{a.detail}</p>
               </div>
-              <span className="text-[11px] text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+              <span className="text-[11px] text-slate-500">{new Date(a.createdAt).toLocaleString()}</span>
             </li>
           ))}
         </ol>

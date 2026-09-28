@@ -32,7 +32,7 @@ export function LandForm({ land, onSubmitForReview }: Props): React.JSX.Element 
             <input className={inputCls} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Motivo del cambio" />
           </Field>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs font-medium text-slate-700">
           Total: {formatAreaM2(land.totalM2)} · Vendible: {formatAreaM2(land.sellableM2)} · Precio: {formatUsdM2(land.priceSaleUsdM2)} · {land.availabilityState}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -41,7 +41,7 @@ export function LandForm({ land, onSubmitForReview }: Props): React.JSX.Element 
               key={to}
               type="button"
               onClick={() => onSubmitForReview(land.id, to, comment || undefined)}
-              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-brand-orange' : 'bg-brand-blue'}`}
+              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-[#2563EB]' : 'bg-brand-blue'}`}
             >
               {to === 'PENDING_VALIDATION' ? 'Enviar a validación' : to}
             </button>

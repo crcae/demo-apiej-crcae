@@ -3,9 +3,14 @@
 @tailwind utilities;
 
 body {
-  background-color: #E2E8F0;
-  color: #0E1A3D;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #EBF0F5;
+  color: #0F172A;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 }
 
 /* View enter animation: fade-in + slide-up on view/persona/period switch */

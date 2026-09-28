@@ -34,11 +34,11 @@ export function ParkForm({ park, isStaff, onSubmitForReview }: Props): React.JSX
             <input className={inputCls} inputMode="decimal" value={totalLand} onChange={(e) => setTotalLand(e.target.value)} />
           </Field>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs font-medium text-slate-700">
           Inventario: {formatAreaM2(park.totalLandM2)} · Desarrollado: {formatAreaM2(park.developedM2)} · Reserva: {formatAreaM2(park.reserveM2)}
         </p>
         {isStaff && park.internalNotes !== undefined && (
-          <p className="mt-2 rounded-xl bg-amber-50 p-2 text-xs text-amber-800">Nota interna: {park.internalNotes}</p>
+          <p className="mt-2 rounded-xl bg-slate-200/70 p-2 text-xs font-medium text-slate-700">Nota interna: {park.internalNotes}</p>
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Field label="Comentario de revisión">
@@ -49,7 +49,7 @@ export function ParkForm({ park, isStaff, onSubmitForReview }: Props): React.JSX
               key={to}
               type="button"
               onClick={() => onSubmitForReview(park.id, to, comment || undefined)}
-              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-brand-orange' : 'bg-brand-blue'}`}
+              className={`rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 ${to === 'VERIFIED' ? 'bg-brand-emerald' : to === 'PENDING_VALIDATION' ? 'bg-[#2563EB]' : 'bg-brand-blue'}`}
             >
               {to === 'PENDING_VALIDATION' ? 'Enviar a validación' : to}
             </button>
