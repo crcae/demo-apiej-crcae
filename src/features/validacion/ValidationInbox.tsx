@@ -36,7 +36,7 @@ export function ValidationInbox({ items, onDecide, spotlight = false }: Props): 
           <CardBody>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{it.kind}</p>
+                <p className="text-xs font-semibold uppercase text-slate-600">{it.kind}</p>
                 <h4 className="text-sm font-bold text-brand-navy">
                   {it.title}
                   {spotlight && idx === 0 && <span className="ml-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white">← aprueba aquí</span>}

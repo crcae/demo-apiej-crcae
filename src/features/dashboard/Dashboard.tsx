@@ -387,39 +387,36 @@ export function Dashboard({
         </div>
       </div>
 
-      {/* Dark executive highlight */}
-      <div className="relative col-span-12 overflow-hidden rounded-[2.2rem] border border-slate-700/60 bg-[#0B192C] p-6 text-white shadow-[10px_10px_30px_rgba(11,25,44,0.45)] transition-all duration-300 hover:shadow-[12px_12px_36px_rgba(11,25,44,0.55)] xl:col-span-4">
-        <span className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-emerald-500/10 blur-2xl" />
-        <span className="pointer-events-none absolute -bottom-8 -right-8 h-36 w-36 rounded-full bg-emerald-500/10 blur-2xl" />
-        <span className="pointer-events-none absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-slate-500/10 blur-2xl" />
-        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-emerald-300">
+      {/* Executive highlight — extruded neumorphic */}
+      <div className="col-span-12 rounded-[2.2rem] border border-white/60 bg-[#EBF0F5] p-6 shadow-[8px_8px_16px_#c5ccd6,-8px_-8px_16px_#ffffff] transition-all duration-300 hover:shadow-[10px_10px_18px_#c5ccd6,-10px_-10px_18px_#ffffff] xl:col-span-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-emerald-700">
           <Sparkles size={13} /> Lectura ejecutiva
         </p>
-        <p className="mt-3 text-xl font-extrabold leading-snug tracking-tight">
+        <p className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-[#0F172A]">
           {topAbsorption !== undefined
             ? `${topAbsorption.corridor} lidera con ${formatAreaM2(topAbsorption.netAbsorptionM2)} de absorción neta`
             : 'Sin datos de absorción en el periodo'}
         </p>
-        <ul className="mt-4 space-y-2 text-[13px] leading-snug text-slate-300">
-          <li className="flex gap-2">
-            <span className="mt-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">VACANCIA</span>
+        <ul className="mt-4 space-y-2 text-[13px] font-medium leading-snug text-[#334155]">
+          <li className="flex items-center gap-2">
+            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">VACANCIA</span>
             {topVacancy !== undefined && topVacancy.inventoryM2 > 0
               ? `Mayor vacancia en ${topVacancy.corridor} (${formatPct(topVacancy.vacancyPct)}). Renta prom. ${formatUsdM2(kpis.avgRentUsd)}.`
               : 'Sin inventario registrado en este corte.'}
           </li>
-          <li className="flex gap-2">
-            <span className="mt-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">SNAPSHOT</span>
+          <li className="flex items-center gap-2">
+            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">SNAPSHOT</span>
             {isQ1 ? 'Q1 congelado: cifras inmutables listas para auditoría.' : 'Q2 en vivo: cada aprobación recalcula al instante.'}
           </li>
-          <li className="flex gap-2">
-            <span className="mt-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">PIPELINE</span>
+          <li className="flex items-center gap-2">
+            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">PIPELINE</span>
             {pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? 'propiedad pendiente' : 'propiedades pendientes'} de validación.` : 'Sin pendientes de validación.'}
           </li>
         </ul>
         <button
           type="button"
           onClick={onGoValidation}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-xs font-bold text-slate-950 shadow-lg transition-all hover:bg-emerald-400 hover:shadow-emerald-500/30 hover:shadow-xl"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#EBF0F5] px-5 py-3 text-xs font-bold text-[#10B981] shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all hover:text-[#059669] active:shadow-[inset_2px_2px_5px_#c5ccd6]"
         >
           {pendingCount > 0 ? 'Aprobar nave pendiente' : 'Ver validación'} <ArrowRight size={14} />
         </button>

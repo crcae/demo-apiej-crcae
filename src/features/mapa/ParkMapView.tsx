@@ -5,7 +5,9 @@ import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
 
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const STYLE_PRIMARY = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const STYLE_FALLBACK = 'https://tiles.openfreemap.org/styles/bright';
+const STYLE_TIMEOUT_MS = 12000;
 const GDL: [number, number] = [-103.33, 20.62];
 
 function pinColor(status: Park['status']): string {
@@ -52,20 +54,51 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     .reduce((s, b) => s + b.netRentableM2, 0);
 
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const styleLevel = useRef(0); // 0 = primary, 1 = fallback
+  const loaded = useRef(false);
 
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: STYLE_URL,
+      style: STYLE_PRIMARY,
       center: GDL,
       zoom: 10,
+      attributionControl: { compact: true },
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.on('load', () => setTileState('ready'));
-    map.on('error', () => setTileState('error'));
+    map.on('load', () => {
+      loaded.current = true;
+      setTileState('ready');
+    });
+    // Escalate ONLY while the style is still loading: try the fallback style
+    // once, then surface the error UI. Transient per-tile errors on a loaded
+    // map are ignored so pins stay usable.
+    map.on('error', () => {
+      if (loaded.current) return;
+      if (styleLevel.current === 0) {
+        styleLevel.current = 1;
+        map.setStyle(STYLE_FALLBACK);
+        return;
+      }
+      setTileState('error');
+    });
+    const timer = window.setTimeout(() => {
+      if (loaded.current) return;
+      if (styleLevel.current === 0) {
+        styleLevel.current = 1;
+        try {
+          map.setStyle(STYLE_FALLBACK);
+        } catch {
+          setTileState('error');
+        }
+        return;
+      }
+      setTileState('error');
+    }, STYLE_TIMEOUT_MS);
     mapObj.current = map;
     return () => {
+      window.clearTimeout(timer);
       map.remove();
       mapObj.current = null;
     };
@@ -165,7 +198,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   key={p.id}
                   type="button"
                   onClick={() => setSelectedId(p.id)}
-                  className={`flex items-center gap-2 rounded-xl p-2 text-left text-xs font-bold ring-1 transition hover:shadow-sm ${selectedId === p.id ? 'bg-[#0B192C] text-white ring-[#0B192C]' : 'bg-white text-slate-700 ring-slate-200'}`}
+                  className={`flex items-center gap-2 rounded-xl p-2 text-left text-xs font-bold transition ${selectedId === p.id ? 'bg-[#0B192C] text-white shadow-md' : 'border border-white/60 bg-[#EBF0F5] text-slate-700 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff] hover:shadow-[5px_5px_12px_#c5ccd6,-5px_-5px_12px_#ffffff]'}`}
                 >
                   <i className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: pinColor(p.status) }} />
                   {p.name}
@@ -181,25 +214,25 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           {selected === null && (
             <div className="py-10 text-center">
               <p className="text-sm font-bold text-brand-navy">Corredores industriales de Jalisco</p>
-              <p className="mt-1 text-xs text-slate-500">Toca un pin para ver ficha técnica, infraestructura y naves hijas.</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">Toca un pin para ver ficha técnica, infraestructura y naves hijas.</p>
             </div>
           )}
           {selected !== null && (
             <div>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[11px] font-bold uppercase text-slate-500">{selected.corridor} · {selected.municipality}</p>
+                  <p className="text-[11px] font-bold uppercase text-slate-700">{selected.corridor} · {selected.municipality}</p>
                   <h3 className="text-sm font-extrabold text-[#0B192C]">{selected.name}</h3>
                 </div>
                 <StatusBadge status={selected.status} />
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Total</dt><dd className="font-bold">{formatAreaM2(selected.totalLandM2)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Disponible (naves)</dt><dd className="font-bold text-brand-emerald">{formatAreaM2(selAvailable)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Desarrollado</dt><dd className="font-bold">{formatAreaM2(selected.developedM2)}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-2"><dt className="text-slate-600">Reserva</dt><dd className="font-bold">{formatAreaM2(selected.reserveM2)}</dd></div>
+                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Total</dt><dd className="font-bold">{formatAreaM2(selected.totalLandM2)}</dd></div>
+                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Disponible (naves)</dt><dd className="font-bold text-brand-emerald">{formatAreaM2(selAvailable)}</dd></div>
+                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Desarrollado</dt><dd className="font-bold">{formatAreaM2(selected.developedM2)}</dd></div>
+                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Reserva</dt><dd className="font-bold">{formatAreaM2(selected.reserveM2)}</dd></div>
               </dl>
-              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Infraestructura</h4>
+              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-700">Infraestructura</h4>
               <ul className="grid grid-cols-2 gap-1 text-xs">
                 {(
                   [
@@ -211,20 +244,20 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     ['Seguridad 24/7', selected.infrastructure.security === true],
                   ] as Array<[string, boolean]>
                 ).map(([label, ok]) => (
-                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-slate-100 text-slate-500'}`}>
+                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-[#E0E5EC] text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]'}`}>
                     {ok === true ? '✓ ' : '✕ '}{label}
                   </li>
                 ))}
               </ul>
-              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Naves ({selBuildings.length})</h4>
+              <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-700">Naves ({selBuildings.length})</h4>
               <ul className="space-y-1.5">
                 {selBuildings.map((b) => (
-                  <li key={b.id} className="rounded-xl bg-slate-50 p-2 text-xs ring-1 ring-slate-100">
+                  <li key={b.id} className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 text-xs shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800">{b.code} · Clase {b.buildingClass}</span>
-                      <span className="text-slate-500">{b.availabilityState}</span>
+                      <span className="font-medium text-slate-600">{b.availabilityState}</span>
                     </div>
-                    <p className="text-slate-500">
+                    <p className="font-medium text-slate-600">
                       {formatAreaM2(b.netRentableM2)} · {formatUsdM2(b.askingRentUsdM2)} ·{' '}
                       {isStaff && b.occupantCompany !== undefined ? (
                         <span className="font-semibold text-[#0B192C]">{b.occupantCompany}</span>
@@ -238,7 +271,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               </ul>
               {selLands.length > 0 && (
                 <>
-                  <h4 className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-600">Terrenos ({selLands.length})</h4>
+                  <h4 className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-700">Terrenos ({selLands.length})</h4>
                   <ul className="space-y-1.5">
                     {selLands.map((l) => (
                       <li key={l.id} className="rounded-xl bg-slate-50 p-2 text-xs text-slate-600 ring-1 ring-slate-100">
