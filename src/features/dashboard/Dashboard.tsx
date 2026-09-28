@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ArrowRight, Building2, DollarSign, FileDown, PieChart, Presentation, Sparkles, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react';
 import {
   Area,
@@ -29,6 +30,8 @@ interface Props {
   onCurrency: (c: Currency) => void;
   readOnly: boolean;
   fx: number;
+  fxLive: boolean;
+  onRevalidateFx: () => void;
   pendingCount: number;
   onGoValidation: () => void;
   onExport: () => void;
@@ -143,8 +146,13 @@ function SparkTip({ active, payload }: { active?: boolean; payload?: readonly un
 }
 
 export function Dashboard({
-  periods, activePeriodId, onPeriod, live, frozen, currency, onCurrency, readOnly, fx, pendingCount, onGoValidation, onExport, onOpenTour,
+  periods, activePeriodId, onPeriod, live, frozen, currency, onCurrency, readOnly, fx, fxLive, onRevalidateFx, pendingCount, onGoValidation, onExport, onOpenTour,
 }: Props): React.JSX.Element {
+  // Revalidate the live FX rate when the period or currency changes so all
+  // dependent $/m² figures update in real time (frozen fallback always safe).
+  useEffect(() => {
+    onRevalidateFx();
+  }, [activePeriodId, currency, onRevalidateFx]);
   const isQ1 = activePeriodId === frozen.periodId;
   const kpis = isQ1 ? frozen : live;
   const deltas = kpiDeltas(live, frozen.vacancyPct, frozen.avgRentUsd);
@@ -182,9 +190,9 @@ export function Dashboard({
         </div>
         <span
           className="rounded-full bg-white px-3.5 py-1.5 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200"
-          title="Tipo de cambio Banxico del periodo activo, usado para convertir rentas USD ↔ MXN"
+          title={fxLive ? 'Tipo de cambio EN VIVO (mercado abierto)' : 'Tipo de cambio Banxico congelado del periodo'}
         >
-          USD/MXN <b className="text-[#0F172A]">${fx.toFixed(2)}</b> · Banxico
+          USD/MXN <b className="text-[#0F172A]">${fx.toFixed(2)}</b> · {fxLive ? 'en vivo' : 'Banxico'}
         </span>
         <span
           className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold ${isQ1 ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800'}`}

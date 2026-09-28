@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './components/Sidebar.js';
 import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
@@ -18,6 +18,7 @@ import {
   mockAuditSeed, mockBuildings, mockLands, mockParks, mockPeriods, mockQ1Kpis,
 } from './mock/market.mock.js';
 import { computeLiveKpis } from './services/analyticsService.js';
+import { fetchLiveFxRate, resolveFx } from './services/fxService.js';
 import { isStaff, listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
 import { PERSONAS } from './store/personas.js';
 import type { AuditEntry, Building, DemoPersonaKey, EntityStatus } from './types/domain.js';
@@ -52,12 +53,29 @@ function App(): React.JSX.Element {
   const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
   const [tourStep, setTourStep] = useState<TourStep | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [liveFx, setLiveFx] = useState<number | null>(null);
 
   const persona = PERSONAS.find((p) => p.key === personaKey) ?? PERSONAS[0];
   const actor = persona.actor;
   const staff = isStaff(actor);
   const readOnly = actor.role === 'MEMBER_VIEWER';
-  const fx = mockPeriods.find((p) => p.id === periodId)?.fxUsdMxn ?? 17.35;
+  const frozenFx = mockPeriods.find((p) => p.id === periodId)?.fxUsdMxn;
+  const fx = resolveFx(liveFx, frozenFx);
+  const fxLive = liveFx !== null;
+
+  function revalidateFx(): void {
+    void fetchLiveFxRate().then((rate) => {
+      if (rate !== null) setLiveFx(rate);
+    });
+  }
+
+  const revalidateFxCb = useCallback(revalidateFx, []);
+
+  // Auto-fetch live USD/MXN on page load/refresh. Falls back to the frozen
+  // period rate (or 17.35) when offline — the app never breaks.
+  useEffect(() => {
+    revalidateFxCb();
+  }, [revalidateFxCb]);
 
   function flash(msg: string): void {
     setToast(msg);
@@ -375,6 +393,8 @@ function App(): React.JSX.Element {
               onCurrency={setCurrency}
               readOnly={readOnly}
               fx={fx}
+              fxLive={fxLive}
+              onRevalidateFx={revalidateFxCb}
               pendingCount={inboxItems.length}
               onGoValidation={() => setView('validacion')}
               onExport={() => setReportOpen(true)}

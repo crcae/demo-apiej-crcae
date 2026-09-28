@@ -5,8 +5,33 @@ import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
 
-const STYLE_PRIMARY = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-const STYLE_FALLBACK = 'https://tiles.openfreemap.org/styles/bright';
+// Bulletproof raster style: tiles load straight from Carto CDN with zero
+// third-party style-JSON requests (no CORS / 404 / SSL failure surface).
+const BULLETPROOF_MAP_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    'carto-light-tiles': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+    },
+  },
+  layers: [
+    {
+      id: 'carto-light-layer',
+      type: 'raster',
+      source: 'carto-light-tiles',
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
 const STYLE_TIMEOUT_MS = 12000;
 const GDL: [number, number] = [-103.33, 20.62];
 
@@ -54,14 +79,13 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     .reduce((s, b) => s + b.netRentableM2, 0);
 
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const styleLevel = useRef(0); // 0 = primary, 1 = fallback
   const loaded = useRef(false);
 
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: STYLE_PRIMARY,
+      style: BULLETPROOF_MAP_STYLE,
       center: GDL,
       zoom: 10,
       attributionControl: { compact: true },
@@ -71,30 +95,13 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       loaded.current = true;
       setTileState('ready');
     });
-    // Escalate ONLY while the style is still loading: try the fallback style
-    // once, then surface the error UI. Transient per-tile errors on a loaded
-    // map are ignored so pins stay usable.
+    // Raster tiles retry internally; only surface the error UI if the map
+    // never becomes ready. HTML pins are unaffected by tile health.
     map.on('error', () => {
       if (loaded.current) return;
-      if (styleLevel.current === 0) {
-        styleLevel.current = 1;
-        map.setStyle(STYLE_FALLBACK);
-        return;
-      }
-      setTileState('error');
     });
     const timer = window.setTimeout(() => {
-      if (loaded.current) return;
-      if (styleLevel.current === 0) {
-        styleLevel.current = 1;
-        try {
-          map.setStyle(STYLE_FALLBACK);
-        } catch {
-          setTileState('error');
-        }
-        return;
-      }
-      setTileState('error');
+      if (!loaded.current) setTileState('error');
     }, STYLE_TIMEOUT_MS);
     mapObj.current = map;
     return () => {
