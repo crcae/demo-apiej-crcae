@@ -25,7 +25,7 @@ export const inputCls =
 export function StatusBadge({ status }: { status: string }): React.JSX.Element {
   const color =
     status === 'VERIFIED'
-      ? 'bg-brand-emerald/10 text-brand-emerald'
+      ? 'bg-[#84CC16]/15 text-[#65A30D]'
       : status === 'PENDING_VALIDATION'
         ? 'bg-[#2563EB]/10 text-[#2563EB]'
         : status === 'CHANGES_REQUESTED' || status === 'REJECTED'

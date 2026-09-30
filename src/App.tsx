@@ -1,4 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage.js';
 import { Sidebar } from './components/Sidebar.js';
 import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
@@ -38,9 +40,13 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function App(): React.JSX.Element {
+const KNOWN_VIEWS: View[] = ['dashboard', 'mapa', 'captura', 'validacion', 'auditoria'];
+
+function PlatformApp(): React.JSX.Element {
+  const entryState = useLocation().state as { view?: string } | null;
+  const entryView: View = KNOWN_VIEWS.includes(entryState?.view as View) ? (entryState?.view as View) : 'dashboard';
   const [personaKey, setPersonaKey] = useState<DemoPersonaKey>('STAFF');
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>(entryView);
   const [periodId, setPeriodId] = useState('p-2026-q2');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [parks, setParks] = useState(mockParks);
@@ -513,6 +519,18 @@ function App(): React.JSX.Element {
       </div>
       </div>
     </div>
+  );
+}
+
+function App(): React.JSX.Element {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<PlatformApp />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

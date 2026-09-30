@@ -230,7 +230,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Total</dt><dd className="font-bold">{formatAreaM2(selected.totalLandM2)}</dd></div>
-                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Disponible (naves)</dt><dd className="font-bold text-brand-emerald">{formatAreaM2(selAvailable)}</dd></div>
+                <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Disponible (naves)</dt><dd className="font-bold text-[#65A30D]">{formatAreaM2(selAvailable)}</dd></div>
                 <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Desarrollado</dt><dd className="font-bold">{formatAreaM2(selected.developedM2)}</dd></div>
                 <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="text-slate-700">Reserva</dt><dd className="font-bold">{formatAreaM2(selected.reserveM2)}</dd></div>
               </dl>
@@ -246,7 +246,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     ['Seguridad 24/7', selected.infrastructure.security === true],
                   ] as Array<[string, boolean]>
                 ).map(([label, ok]) => (
-                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-[#E0E5EC] text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]'}`}>
+                  <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-[#84CC16]/15 text-[#65A30D]' : 'bg-[#E0E5EC] text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]'}`}>
                     {ok === true ? '✓ ' : '✕ '}{label}
                   </li>
                 ))}

@@ -59,8 +59,8 @@ function RadialRing({ pct }: { pct: number }): React.JSX.Element {
       <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
         <defs>
           <linearGradient id="goldRing" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#2563EB" />
-            <stop offset="100%" stopColor="#10B981" />
+            <stop offset="0%" stopColor="#F97316" />
+            <stop offset="100%" stopColor="#FACC15" />
           </linearGradient>
         </defs>
         <circle cx="64" cy="64" r={r} fill="none" stroke="#F1F5F9" strokeWidth="13" />
@@ -218,7 +218,7 @@ export function Dashboard({
               key={p.id}
               type="button"
               onClick={() => onPeriod(p.id)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${activePeriodId === p.id ? 'bg-[#0F172A] text-white shadow-sm' : 'text-slate-600 hover:bg-[#EBF0F5]'}`}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${activePeriodId === p.id ? 'bg-[#F97316] text-white shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2)]' : 'text-slate-700 hover:bg-[#EBF0F5]'}`}
             >
               {p.label}
             </button>
@@ -233,7 +233,7 @@ export function Dashboard({
               key={c}
               type="button"
               onClick={() => onCurrency(c)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${currency === c ? 'bg-[#0F172A] text-white shadow-sm' : 'text-slate-600 hover:bg-[#EBF0F5]'}`}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${currency === c ? 'bg-[#F97316] text-white shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2)]' : 'text-slate-700 hover:bg-[#EBF0F5]'}`}
             >
               {c}
             </button>
@@ -316,12 +316,12 @@ export function Dashboard({
               <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="sparkGold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#10B981" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#F97316" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#FACC15" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <Tooltip content={<SparkTip />} />
-                <Area type="monotone" dataKey="renta" stroke="#2563EB" strokeWidth={2.5} fill="url(#sparkGold)" />
+                <Area type="monotone" dataKey="renta" stroke="#F97316" strokeWidth={2.5} fill="url(#sparkGold)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -360,12 +360,12 @@ export function Dashboard({
             <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 52 }}>
               <defs>
                 <linearGradient id="gradInv" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#334155" />
+                  <stop offset="0%" stopColor="#1E293B" />
                   <stop offset="100%" stopColor="#0F172A" />
                 </linearGradient>
                 <linearGradient id="gradAbs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#34D399" />
-                  <stop offset="100%" stopColor="#059669" />
+                  <stop offset="0%" stopColor="#84CC16" />
+                  <stop offset="100%" stopColor="#65A30D" />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="#E2E8F0" strokeDasharray="4 4" vertical={false} />
@@ -389,7 +389,7 @@ export function Dashboard({
               <ReferenceLine yAxisId="right" y={0} stroke="#0F172A" strokeOpacity={0.25} strokeDasharray="5 4" />
               <Bar yAxisId="left" dataKey="Inventario" fill="url(#gradInv)" radius={[10, 10, 10, 10]} maxBarSize={38} />
               <Bar yAxisId="left" dataKey="Absorción" fill="url(#gradAbs)" radius={[10, 10, 10, 10]} maxBarSize={38} />
-              <Line yAxisId="right" type="monotone" dataKey="Vacancia" stroke="#2563EB" strokeWidth={3} dot={{ r: 4, fill: '#2563EB', strokeWidth: 2, stroke: '#fff', style: { filter: 'drop-shadow(0 0 5px rgba(37,99,235,0.8))' } }} activeDot={{ r: 6, fill: '#2563EB', stroke: '#fff' }} />
+              <Line yAxisId="right" type="monotone" dataKey="Vacancia" stroke="#F97316" strokeWidth={3} dot={{ r: 4, fill: '#F97316', strokeWidth: 2, stroke: '#fff', style: { filter: 'drop-shadow(0 0 5px rgba(249,115,22,0.8))' } }} activeDot={{ r: 6, fill: '#F97316', stroke: '#fff' }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -397,7 +397,7 @@ export function Dashboard({
 
       {/* Executive highlight — extruded neumorphic */}
       <div className="col-span-12 rounded-[2.2rem] border border-white/60 bg-[#EBF0F5] p-6 shadow-[8px_8px_16px_#c5ccd6,-8px_-8px_16px_#ffffff] transition-all duration-300 hover:shadow-[10px_10px_18px_#c5ccd6,-10px_-10px_18px_#ffffff] xl:col-span-4">
-        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-emerald-700">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-[#65A30D]">
           <Sparkles size={13} /> Lectura ejecutiva
         </p>
         <p className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-[#0F172A]">
@@ -407,24 +407,24 @@ export function Dashboard({
         </p>
         <ul className="mt-4 space-y-2 text-[13px] font-medium leading-snug text-[#334155]">
           <li className="flex items-center gap-2">
-            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">VACANCIA</span>
+            <span className="rounded-xl bg-[#84CC16]/15 px-3 py-1 text-[10px] font-bold text-[#65A30D]">VACANCIA</span>
             {topVacancy !== undefined && topVacancy.inventoryM2 > 0
               ? `Mayor vacancia en ${topVacancy.corridor} (${formatPct(topVacancy.vacancyPct)}). Renta prom. ${formatUsdM2(kpis.avgRentUsd)}.`
               : 'Sin inventario registrado en este corte.'}
           </li>
           <li className="flex items-center gap-2">
-            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">SNAPSHOT</span>
+            <span className="rounded-xl bg-[#84CC16]/15 px-3 py-1 text-[10px] font-bold text-[#65A30D]">SNAPSHOT</span>
             {isQ1 ? 'Q1 congelado: cifras inmutables listas para auditoría.' : 'Q2 en vivo: cada aprobación recalcula al instante.'}
           </li>
           <li className="flex items-center gap-2">
-            <span className="rounded-xl bg-[#E0E5EC] px-3 py-1 text-[10px] font-bold text-[#0F172A] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">PIPELINE</span>
+            <span className="rounded-xl bg-[#84CC16]/15 px-3 py-1 text-[10px] font-bold text-[#65A30D]">PIPELINE</span>
             {pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? 'propiedad pendiente' : 'propiedades pendientes'} de validación.` : 'Sin pendientes de validación.'}
           </li>
         </ul>
         <button
           type="button"
           onClick={onGoValidation}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#EBF0F5] px-5 py-3 text-xs font-bold text-[#10B981] shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all hover:text-[#059669] active:shadow-[inset_2px_2px_5px_#c5ccd6]"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#84CC16] px-6 py-3 text-xs font-extrabold text-slate-950 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all hover:bg-[#65A30D]"
         >
           {pendingCount > 0 ? 'Aprobar nave pendiente' : 'Ver validación'} <ArrowRight size={14} />
         </button>

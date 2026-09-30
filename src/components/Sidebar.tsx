@@ -40,11 +40,8 @@ export function Sidebar({ items, activeView, onView, persona, onPersona, orgName
     <aside className="sticky top-6 z-[80] hidden min-h-[calc(100vh-3rem)] w-64 shrink-0 flex-col justify-between rounded-[2.2rem] border border-white/60 bg-[#EBF0F5] p-5 shadow-[10px_10px_20px_#c8d0e0,-10px_-10px_20px_#ffffff] md:flex">
       <div>
         <div className="flex items-center gap-2.5 px-1" title="APIEJ · Plataforma de Inteligencia de Mercado">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0F172A] text-base font-black text-emerald-300 shadow-sm">
-            A
-          </span>
+          <img src="/apiej_logo.png" alt="APIEJ" className="h-9 w-auto object-contain" />
           <span>
-            <span className="block text-sm font-extrabold leading-tight text-[#0F172A]">APIEJ</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700">
               <i className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
               Jalisco Intelligence
