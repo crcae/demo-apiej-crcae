@@ -233,7 +233,7 @@ export function Dashboard({
               key={c}
               type="button"
               onClick={() => onCurrency(c)}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${currency === c ? 'bg-[#F97316] text-white shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2)]' : 'text-slate-700 hover:bg-[#EBF0F5]'}`}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${currency === c ? 'bg-[#00a2ff] text-white shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2)]' : 'text-slate-700 hover:bg-[#EBF0F5]'}`}
             >
               {c}
             </button>
@@ -252,7 +252,7 @@ export function Dashboard({
             type="button"
             onClick={onExport}
             title="Vista previa del Reporte Trimestral oficial + descarga PDF"
-            className="flex items-center gap-1.5 rounded-full bg-[#0F172A] px-4 py-2 text-xs font-bold text-white shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all duration-200 hover:shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]"
+            className="flex items-center gap-1.5 rounded-full bg-[#b3d700] px-4 py-2 text-xs font-extrabold text-slate-950 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all duration-200 hover:brightness-105 hover:shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]"
           >
             <FileDown size={13} /> Exportar Reporte PDF
           </button>
@@ -274,7 +274,7 @@ export function Dashboard({
 
       {/* Inventory striped meter */}
       <div className={`${bentoCard} col-span-12 sm:col-span-6 xl:col-span-4`}>
-        <MeterLabel icon={Building2} iconCls="bg-emerald-500/15 text-emerald-600" title="Inventario total" subtitle="Espacio construido verificado en parques" />
+        <MeterLabel icon={Building2} iconCls="bg-[#b3d700]/15 text-[#65A30D]" title="Inventario total" subtitle="Espacio construido verificado en parques" />
         <p className="mt-3 text-3xl font-black tracking-tight text-[#0F172A]">{formatAreaM2(kpis.totalInventoryM2)}</p>
         <div
           className="mt-3 flex h-4 overflow-hidden rounded-full bg-slate-100"
@@ -303,7 +303,7 @@ export function Dashboard({
 
       {/* Rent + sparkline */}
       <div className={`${bentoCard} col-span-12 xl:col-span-4`}>
-        <MeterLabel icon={DollarSign} iconCls="bg-indigo-500/15 text-indigo-600" title={`Renta prom. (${currency})`} subtitle="Precio pedido ponderado por m² rentable" />
+        <MeterLabel icon={DollarSign} iconCls="bg-[#00a2ff]/15 text-[#00a2ff]" title={`Renta prom. (${currency})`} subtitle="Precio pedido ponderado por m² rentable" />
         <div className="mt-3 flex items-end justify-between gap-3">
           <div>
             <p className="text-3xl font-black tracking-tight text-[#0F172A]">{rent}</p>
@@ -333,7 +333,7 @@ export function Dashboard({
 
       {/* Absorption mini strip */}
       <div className={`${bentoCard} col-span-12 flex flex-wrap items-center gap-x-8 gap-y-3 sm:col-span-6`}>
-        <MeterLabel icon={TrendingUp} iconCls="bg-emerald-500/15 text-emerald-600" title="Absorción neta" subtitle="Cambio neto de ocupación vs Q1" />
+        <MeterLabel icon={TrendingUp} iconCls="bg-[#b3d700]/15 text-[#65A30D]" title="Absorción neta" subtitle="Cambio neto de ocupación vs Q1" />
         <p className="ml-auto text-2xl font-black tracking-tight text-[#0F172A]">{formatAreaM2(kpis.netAbsorptionM2)}</p>
         <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ${toneCls[isQ1 ? 'neutral' : kpis.netAbsorptionM2 >= 0 ? 'good' : 'bad']}`}>
           {isQ1 ? 'Trimestre congelado' : 'Ocupado(Q2) − Ocupado(Q1)'}
@@ -426,7 +426,7 @@ export function Dashboard({
           onClick={onGoValidation}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#84CC16] px-6 py-3 text-xs font-extrabold text-slate-950 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] transition-all hover:bg-[#65A30D]"
         >
-          {pendingCount > 0 ? 'Aprobar nave pendiente' : 'Ver validación'} <ArrowRight size={14} />
+          {pendingCount > 0 ? 'Revisar pendientes →' : 'Ver validación'} <ArrowRight size={14} />
         </button>
       </div>
     </div>

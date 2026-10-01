@@ -55,7 +55,7 @@ export const PERSONAS: PersonaMeta[] = [
     label: 'Developer Beta',
     short: 'Beta',
     description: 'Park Operator · solo propiedades Beta (aislamiento)',
-    accent: 'bg-[#2563EB]',
+    accent: 'bg-[#00a2ff]',
     actor: {
       userId: 'op-beta', fullName: 'Operador Beta', isSuperAdmin: false,
       orgId: ORG_BETA, orgName: 'Developer Beta', role: 'PARK_OPERATOR',

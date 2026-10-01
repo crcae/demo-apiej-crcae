@@ -67,7 +67,7 @@ export function Sidebar({ items, activeView, onView, persona, onPersona, orgName
                 <Icon size={17} strokeWidth={active ? 2.5 : 2} className={active ? 'text-[#0F172A]' : 'text-slate-500'} />
                 {it.label}
                 {it.count !== undefined && it.count > 0 && (
-                  <span className={`ml-auto rounded-full px-1.5 text-[10px] font-bold ${active ? 'bg-[#0F172A] text-white' : 'bg-[#2563EB]/10 text-[#2563EB]'}`}>
+                  <span className={`ml-auto rounded-full px-1.5 text-[10px] font-bold ${active ? 'bg-[#0F172A] text-white' : 'bg-[#00a2ff]/15 text-[#0284c7]'}`}>
                     {it.count}
                   </span>
                 )}
@@ -78,8 +78,8 @@ export function Sidebar({ items, activeView, onView, persona, onPersona, orgName
       </div>
       <div className="mt-6 space-y-2">
         <div className="rounded-2xl bg-[#E2E8F0] p-3.5 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
-            <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Sistema en vivo
+          <p className="flex items-center gap-1.5 text-[11px] font-bold text-[#65A30D]">
+            <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-[#b3d700]" /> Sistema en vivo
           </p>
           <p className="mt-1 text-[11px] font-semibold text-slate-700">{orgName}</p>
           <p className="mt-0.5 text-[10px] font-medium text-slate-600" title="Filtrado por tenant y visibilidad en backend">{visibleCounts}</p>

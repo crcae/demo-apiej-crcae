@@ -32,7 +32,7 @@ const GDL: [number, number] = [-103.33, 20.62];
 
 function pinColor(status: Park['status']): string {
   if (status === 'VERIFIED') return '#0E1A3D';
-  if (status === 'PENDING_VALIDATION') return '#2563EB';
+  if (status === 'PENDING_VALIDATION') return '#00a2ff';
   return '#94a3b8';
 }
 
@@ -189,7 +189,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-600">
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0E1A3D' }} /> Verificado</span>
-            <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#2563EB' }} /> En revisión</span>
+            <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#00a2ff' }} /> En revisión</span>
             <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#94a3b8' }} /> Borrador</span>
             <span className="ml-auto">{filtered.length} parques visibles (de {parks.length})</span>
           </div>
