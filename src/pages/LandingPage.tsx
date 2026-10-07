@@ -83,8 +83,8 @@ export function LandingPage(): React.JSX.Element {
             onError={() => { if (heroSrc !== HERO_FALLBACK) setHeroSrc(HERO_FALLBACK); }}
             className="absolute inset-0 z-0 h-full w-full scale-[1.01] object-cover object-center"
           />
-          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/20" />
-          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-slate-950/95 via-slate-950/40 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
           <div className="relative z-20 max-w-xl">
             <div className="flex items-center gap-2.5">
@@ -126,11 +126,13 @@ export function LandingPage(): React.JSX.Element {
         <section id="cifras" className="mb-12 scroll-mt-24">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-black text-slate-950">El mercado en cifras</h2>
-            <span className="text-xs font-medium text-slate-500">T1 · Cifras ilustrativas</span>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> T1 · Cifras ilustrativas · LIVE
+            </span>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {STATS.map((s) => (
-              <div key={s.label} className={`rounded-2xl border border-slate-200/60 border-t-4 ${s.bar} bg-white/90 p-6 shadow-md backdrop-blur`}>
+              <div key={s.label} className={`rounded-2xl border border-slate-200/60 border-t-4 ${s.bar} bg-white/90 p-6 shadow-md backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}>
                 <p className="text-3xl font-black text-slate-950">{s.value}</p>
                 <p className="mt-2 text-xs font-bold text-slate-500">{s.label}</p>
               </div>
@@ -148,7 +150,7 @@ export function LandingPage(): React.JSX.Element {
                 key={c.n}
                 type="button"
                 onClick={() => go(navigate, c.view)}
-                className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 text-left shadow-md transition-all hover:shadow-lg ${c.line} border-b-4`}
+                className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 text-left shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${c.line} border-b-4`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`w-fit rounded-xl p-2.5 ${c.box}`}>
@@ -189,7 +191,7 @@ export function LandingPage(): React.JSX.Element {
           </div>
           <div ref={stripRef} className="my-4 flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-4 md:overflow-visible [&::-webkit-scrollbar]:hidden">
             {DEVS.map((d) => (
-              <div key={d.name} className="w-52 shrink-0 rounded-2xl bg-white px-6 py-7 text-center shadow-md ring-1 ring-slate-200/60 md:w-auto">
+              <div key={d.name} className="w-52 shrink-0 rounded-2xl bg-white px-6 py-7 text-center shadow-md ring-1 ring-slate-200/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-[#b3d700]/50 md:w-auto">
                 <p className={`text-2xl font-black text-slate-900 ${d.cls}`}>{d.name}</p>
                 {d.sub !== '' && <p className={`mt-1 ${d.subCls}`}>{d.sub}</p>}
               </div>
@@ -205,7 +207,7 @@ export function LandingPage(): React.JSX.Element {
 
         {/* Institutional banner */}
         <section id="institucional" className="my-10 scroll-mt-24">
-          <div className="grid grid-cols-1 items-center gap-8 rounded-3xl border border-slate-200/80 bg-slate-100/90 p-8 shadow-sm md:grid-cols-12 md:p-10">
+          <div className="grid grid-cols-1 items-center gap-8 rounded-3xl border border-slate-200/80 bg-slate-100/90 p-8 shadow-sm transition-all duration-300 hover:shadow-lg md:grid-cols-12 md:p-10">
             <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-8 text-center shadow-sm md:col-span-5">
               <div className="mb-4 flex flex-row gap-1.5" aria-hidden="true">
                 <i className="h-2 w-2 rounded-full bg-[#ff8d00]" />

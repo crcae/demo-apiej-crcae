@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
 import {
+  ArrowUpRight, BarChart3, Building2, DollarSign, FileDown, FileText,
+  PieChart, Presentation, TrendingUp, type LucideIcon,
+} from 'lucide-react';
+import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { QUARTER_MONTHS } from '../../mock/market.mock.js';
@@ -28,6 +32,14 @@ interface Props {
 
 const card =
   'rounded-3xl bg-[#EBF0F5] p-5 shadow-[8px_8px_18px_#c5ccd6,-8px_-8px_18px_#ffffff] transition-all duration-300 hover:shadow-[10px_10px_22px_#c5ccd6,-10px_-10px_22px_#ffffff]';
+
+function IconCapsule({ icon: Icon, cls }: { icon: LucideIcon; cls: string }): React.JSX.Element {
+  return (
+    <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 shadow-sm ${cls}`}>
+      <Icon size={18} strokeWidth={2.25} />
+    </span>
+  );
+}
 
 /** Donut progress ring (vacancy accent). */
 function DonutRing({ pct }: { pct: number }): React.JSX.Element {
@@ -189,7 +201,7 @@ export function Dashboard({
             title="Inicia el tour guiado de 5 pasos"
             className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-300/80 bg-white px-4 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition-all hover:bg-slate-50"
           >
-            📖 Tour guiado
+            <Presentation size={13} /> Tour guiado
           </button>
           <button
             type="button"
@@ -197,15 +209,15 @@ export function Dashboard({
             title="Vista previa del Reporte Trimestral oficial + descarga PDF"
             className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#b3d700] px-4 py-1.5 text-xs font-black text-slate-950 shadow-md transition-all hover:bg-[#a2c400]"
           >
-            📄 Exportar PDF
+            <FileDown size={13} /> Exportar PDF
           </button>
         </div>
       </div>
 
       {/* Row 1 */}
-      <div className="grid grid-cols-12 gap-5">
+      <div className="grid grid-cols-12 items-stretch gap-5">
         <div className={`${card} col-span-12 sm:col-span-6 xl:col-span-4`}>
-          <span className="mb-2 inline-block rounded-xl bg-emerald-500/15 p-2.5 text-emerald-600">🏢</span>
+          <div className="mb-2"><IconCapsule icon={Building2} cls="bg-emerald-500/15 text-emerald-600" /></div>
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Superficie industrial total</p>
           <p className="mt-1 text-3xl font-black tracking-tight text-slate-950">{formatAreaM2(kpis.totalInventoryM2)}</p>
           <p className="mb-3 mt-0.5 text-xs font-medium text-slate-500">Espacio construido registrado en los parques.</p>
@@ -217,13 +229,14 @@ export function Dashboard({
             <div className="h-full bg-[#f59e0b] transition-all duration-700" style={{ width: `${kpis.vacancyPct.toFixed(1)}%` }} />
           </div>
           <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-slate-500">
-            <span>🟢 Ocupado {formatPct(occupiedPct)} · 🟠 Disponible {formatPct(kpis.vacancyPct)}</span>
+            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Ocupado {formatPct(occupiedPct)}</span>
+            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#ff8d00]" /> Disponible {formatPct(kpis.vacancyPct)}</span>
             <span className="rounded-md bg-slate-200/70 px-2 py-0.5">Inventario</span>
           </div>
         </div>
 
         <div className={`${card} col-span-12 sm:col-span-6 xl:col-span-4`}>
-          <span className="mb-2 inline-block rounded-xl bg-amber-500/15 p-2.5 text-amber-600">⏱</span>
+          <div className="mb-2"><IconCapsule icon={PieChart} cls="bg-amber-500/15 text-amber-600" /></div>
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Espacio disponible para renta</p>
           <div className="mt-1 flex items-center gap-3">
             <div className="min-w-0 flex-1">
@@ -238,7 +251,7 @@ export function Dashboard({
         </div>
 
         <div className={`${card} col-span-12 xl:col-span-4`}>
-          <span className="mb-2 inline-block rounded-xl bg-blue-500/15 p-2.5 text-blue-600">$</span>
+          <div className="mb-2"><IconCapsule icon={DollarSign} cls="bg-blue-500/15 text-blue-600" /></div>
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Renta promedio por m²</p>
           <p className="mt-1 text-3xl font-black tracking-tight text-slate-950">{rent}</p>
           <p className="mb-3 mt-1 text-xs font-medium text-slate-500">Precio solicitado, ponderado por superficie rentable.</p>
@@ -249,10 +262,10 @@ export function Dashboard({
       </div>
 
       {/* Row 2 */}
-      <div className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="my-6 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2">
         <div className={`${card} flex items-center justify-between gap-4`}>
           <div className="flex items-center">
-            <span className="mr-3 rounded-2xl bg-emerald-500/15 p-3 text-emerald-600">📈</span>
+            <span className="mr-3"><IconCapsule icon={ArrowUpRight} cls="bg-emerald-500/15 text-emerald-600" /></span>
             <div>
               <p className="text-[10px] font-extrabold uppercase text-slate-400">Cambio neto de ocupación (Absorción neta)</p>
               <p className="mt-1 text-xs font-medium text-slate-500">Aumento del espacio ocupado respecto al trimestre anterior.</p>
@@ -262,7 +275,7 @@ export function Dashboard({
         </div>
         <div className={`${card} flex items-center justify-between gap-4`}>
           <div className="flex items-center">
-            <span className="mr-3 rounded-2xl bg-blue-500/15 p-3 text-blue-600">📊</span>
+            <span className="mr-3"><IconCapsule icon={BarChart3} cls="bg-blue-500/15 text-blue-600" /></span>
             <div>
               <p className="text-[10px] font-extrabold uppercase text-slate-400">Superficie comercializada (Absorción bruta)</p>
               <p className="mt-1 text-xs font-medium text-slate-500">Superficie de operaciones registradas en el trimestre.</p>
@@ -273,7 +286,7 @@ export function Dashboard({
       </div>
 
       {/* Row 3 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         <div className={`${card} col-span-1 lg:col-span-8`}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
@@ -282,7 +295,7 @@ export function Dashboard({
             </div>
             <div className="flex gap-4 text-[11px] font-bold text-slate-700">
               <span>⚫ Superficie total</span>
-              <span>🟢 Disponible</span>
+              <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Disponible</span>
             </div>
           </div>
           <div className="mt-2 h-80 w-full">
@@ -310,19 +323,19 @@ export function Dashboard({
             <h3 className="mb-4 text-base font-black text-slate-950">Claves del trimestre</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
-                <span className="rounded-2xl bg-[#ff8d00]/15 p-2.5 text-[#ff8d00]">🟠</span>
+                <IconCapsule icon={PieChart} cls="bg-[#ff8d00]/15 text-[#ff8d00]" />
                 <p className="text-xs font-medium text-slate-500">
                   <b className="mr-1 font-extrabold text-slate-950">{formatPct(kpis.vacancyPct)}</b>disponible para renta
                 </p>
               </li>
               <li className="flex items-center gap-3">
-                <span className="rounded-2xl bg-emerald-500/15 p-2.5 text-emerald-600">📈</span>
+                <IconCapsule icon={TrendingUp} cls="bg-emerald-500/15 text-emerald-600" />
                 <p className="text-xs font-medium text-slate-500">
                   <b className="mr-1 font-extrabold text-slate-950">{formatAreaM2(kpis.netAbsorptionM2)}</b>de aumento neto
                 </p>
               </li>
               <li className="flex items-center gap-3">
-                <span className="rounded-2xl bg-blue-500/15 p-2.5 text-blue-600">📋</span>
+                <IconCapsule icon={FileText} cls="bg-blue-500/15 text-blue-600" />
                 <p className="text-xs font-medium text-slate-500">
                   <b className="mr-1 font-extrabold text-slate-950">{pendingCount}</b>registros por validar
                 </p>

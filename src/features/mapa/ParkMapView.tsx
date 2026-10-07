@@ -405,22 +405,19 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           <CardBody>
             <div ref={wrapRef} className="relative">
               <div ref={mapRef} className="h-[calc(100vh-280px)] min-h-[520px] w-full overflow-hidden rounded-3xl ring-1 ring-slate-200" />
-              {tileState !== 'ready' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-[2rem] bg-[#EBF0F5] p-6 text-center">
-                  {tileState === 'loading' ? (
-                    <>
-                      <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#00a2ff]/20 border-t-[#00a2ff]" />
-                      <p className="text-xs font-bold text-slate-700">Cargando tiles del mapa…</p>
-                      <p className="text-[11px] font-medium text-slate-600">Los pines aparecen en cuanto el estilo termina de cargar.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-bold text-slate-800">Mapa sin conexión a tiles</p>
-                      <p className="max-w-xs text-xs font-medium text-slate-600">
-                        No se pudo cargar la base (red). Usa los filtros y la ficha lateral: los datos siguen disponibles abajo.
-                      </p>
-                    </>
-                  )}
+              {tileState === 'loading' && (
+                <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2">
+                  <div className="flex items-center gap-2 rounded-full border border-white/60 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00a2ff]/20 border-t-[#00a2ff]" />
+                    <p className="text-[11px] font-bold text-slate-700">Cargando tiles del mapa…</p>
+                  </div>
+                </div>
+              )}
+              {tileState === 'error' && (
+                <div className="absolute left-1/2 top-3 z-10 w-max max-w-[92%] -translate-x-1/2">
+                  <div className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+                    <p className="text-[11px] font-bold text-slate-700">Tiles limitados por red — pines y ficha siguen activos.</p>
+                  </div>
                 </div>
               )}
               {/* Top-left mode switch */}
@@ -484,9 +481,9 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
               <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span>Propuesta visual · Zonas ilustrativas</span>
-                <span className="font-bold text-slate-700">🟢 Verificado</span>
-                <span className="font-bold text-slate-700">🔵 En revisión</span>
-                <span className="font-bold text-slate-700">⚪ Borrador</span>
+                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Verificado</span>
+                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#00a2ff]" /> En revisión</span>
+                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-slate-300" /> Borrador</span>
               </span>
               <span className="font-medium">© OpenStreetMap contributors | Referencia de corredores: APIEJ | {filtered.length} parques visibles</span>
             </div>
