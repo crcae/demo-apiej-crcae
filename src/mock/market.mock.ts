@@ -8,7 +8,16 @@ export const ORG_BETA = 'org-beta';
 export const mockPeriods: Period[] = [
   { id: 'p-2026-q1', year: 2026, quarter: 1, label: '2026-Q1', isClosed: true, fxUsdMxn: 17.12 },
   { id: 'p-2026-q2', year: 2026, quarter: 2, label: '2026-Q2', isClosed: false, fxUsdMxn: 17.35 },
+  { id: 'p-2026-q3', year: 2026, quarter: 3, label: '2026-Q3', isClosed: false, fxUsdMxn: 17.61 },
+  { id: 'p-2026-q4', year: 2026, quarter: 4, label: '2026-Q4', isClosed: false, fxUsdMxn: 17.8 },
 ];
+
+export const QUARTER_MONTHS: Record<number, string> = {
+  1: 'Enero - marzo',
+  2: 'Abril - junio',
+  3: 'Julio - septiembre',
+  4: 'Octubre - diciembre',
+};
 
 export const mockParks: Park[] = [
   {

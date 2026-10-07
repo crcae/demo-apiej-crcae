@@ -14,7 +14,7 @@ let cached: number | null = null;
 let inFlight: Promise<number | null> | null = null;
 
 function validRate(v: unknown): number | null {
-  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : null;
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v * 10000) / 10000 : null;
 }
 
 async function getJson(url: string, signal: AbortSignal): Promise<unknown> {

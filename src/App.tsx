@@ -4,18 +4,16 @@ import { LandingPage } from './pages/LandingPage.js';
 import { Sidebar } from './components/Sidebar.js';
 import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
-import { AuditList } from './features/auditoria/AuditList.js';
+import { AuditView } from './features/auditoria/AuditView.js';
+import { CaptureView } from './features/captura/CaptureView.js';
+import { ReportModal } from './features/reportes/ReportModal.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
 
 const ParkMapView = lazy(() =>
   import('./features/mapa/ParkMapView.js').then((m) => ({ default: m.ParkMapView })),
 );
-import { BuildingForm } from './features/naves/BuildingForm.js';
-import { ParkForm } from './features/parques/ParkForm.js';
-import { LandForm } from './features/terrenos/LandForm.js';
-import { ReportModal } from './features/reportes/ReportModal.js';
-import { ValidationInbox, type PendingItem } from './features/validacion/ValidationInbox.js';
+import { ValidationView, type ReviewItem } from './features/validacion/ValidationView.js';
 import {
   mockAuditSeed, mockBuildings, mockLands, mockParks, mockPeriods, mockQ1Kpis,
 } from './mock/market.mock.js';
@@ -23,7 +21,7 @@ import { computeLiveKpis } from './services/analyticsService.js';
 import { fetchLiveFxRate, resolveFx } from './services/fxService.js';
 import { isStaff, listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
 import { PERSONAS } from './store/personas.js';
-import type { AuditEntry, Building, DemoPersonaKey, EntityStatus } from './types/domain.js';
+import type { AuditEntry, Building, DemoPersonaKey, EntityStatus, Park } from './types/domain.js';
 import './App.css';
 
 type View = 'dashboard' | 'mapa' | 'captura' | 'validacion' | 'auditoria';
@@ -47,7 +45,7 @@ function PlatformApp(): React.JSX.Element {
   const entryView: View = KNOWN_VIEWS.includes(entryState?.view as View) ? (entryState?.view as View) : 'dashboard';
   const [personaKey, setPersonaKey] = useState<DemoPersonaKey>('STAFF');
   const [view, setView] = useState<View>(entryView);
-  const [periodId, setPeriodId] = useState('p-2026-q2');
+  const [periodId, setPeriodId] = useState('p-2026-q1');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [parks, setParks] = useState(mockParks);
   const [buildings, setBuildings] = useState<Building[]>(mockBuildings);
@@ -56,7 +54,6 @@ function PlatformApp(): React.JSX.Element {
   const [toast, setToast] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
-  const [captureTab, setCaptureTab] = useState<'parques' | 'naves' | 'terrenos'>('naves');
   const [tourStep, setTourStep] = useState<TourStep | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [liveFx, setLiveFx] = useState<number | null>(null);
@@ -155,11 +152,11 @@ function PlatformApp(): React.JSX.Element {
     flash('✓ Aprobada y Q2 recalculado en vivo — Q1 intacto. Paso 5: mapa y reporte.');
   }
 
-  const inboxItems: PendingItem[] = useMemo(() => {
-    const all: PendingItem[] = [
-      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): PendingItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
-      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): PendingItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
-      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): PendingItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
+  const inboxItems: ReviewItem[] = useMemo(() => {
+    const all: ReviewItem[] = [
+      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): ReviewItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
+      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): ReviewItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
+      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): ReviewItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
     ];
     if (staff) return all;
     return all.filter((it) => {
@@ -240,7 +237,7 @@ function PlatformApp(): React.JSX.Element {
   }
 
   // --- Validation transitions (mirror backend authorizeTransition) ---
-  function decide(item: PendingItem, to: EntityStatus, comment: string): void {
+  function decide(item: ReviewItem, to: EntityStatus, comment: string): void {
     if (!staff) {
       flash('403 Forbidden — solo APIEJ Staff puede aprobar.');
       return;
@@ -281,6 +278,30 @@ function PlatformApp(): React.JSX.Element {
     });
     if (to === 'PENDING_VALIDATION') flash('Enviado a validación — Staff recibió alerta en el inbox.');
     else flash(`Estado actualizado → ${to}`);
+  }
+
+  function updatePark(id: string, patch: Partial<Park>): void {
+    setParks((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: nowIso() } : p)));
+    pushAudit({
+      actorName: actor.fullName, action: 'UPDATE', entityType: 'PARK',
+      entityLabel: id, detail: 'Borrador actualizado (superficies y datos generales)',
+    });
+    flash('Borrador guardado.');
+  }
+
+  function createPark(): void {
+    const stamp = Date.now() % 100000;
+    setParks((prev) => [...prev, {
+      id: `park-nuevo-${stamp}`, orgId: actor.orgId, name: 'Nuevo parque',
+      slug: `parque-nuevo-${stamp}`, municipality: 'El Salto', corridor: 'El Salto',
+      totalLandM2: 0, developedM2: 0, reserveM2: 0, infrastructure: {},
+      category: 'PCI', status: 'DRAFT', visibility: 'PRIVATE', updatedAt: nowIso(),
+    }]);
+    pushAudit({
+      actorName: actor.fullName, action: 'CREATE', entityType: 'PARK',
+      entityLabel: 'Nuevo parque', detail: 'Parque creado como borrador',
+    });
+    flash('Nuevo parque creado como borrador.');
   }
 
   function saveWizard(d: WizardDraft, submit: boolean, editingId: string | null): void {
@@ -421,76 +442,34 @@ function PlatformApp(): React.JSX.Element {
           )}
 
           {view === 'captura' && !readOnly && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {(['parques', 'naves', 'terrenos'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setCaptureTab(t)}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold capitalize transition ${captureTab === t ? 'bg-[#0F172A] text-white shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]' : 'bg-[#EBF0F5] text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]'}`}
-                  >
-                    {t}
-                  </button>
-                ))}
-                {captureTab === 'naves' && (
-                  <button
-                    type="button"
-                    onClick={() => { setEditing(null); setWizardOpen(true); }}
-                    className="ml-auto rounded-xl bg-brand-emerald px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
-                  >
-                    + Nueva nave (wizard)
-                  </button>
-                )}
-              </div>
-              {captureTab === 'parques' && visParks.map((p) => (
-                <ParkForm key={p.id} park={p} isStaff={staff} onSubmitForReview={(id, to, c) => submitForReview('PARK', id, to, c)} />
-              ))}
-              {captureTab === 'naves' && (
-                <>
-                  {visBuildings.length === 0 && <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-sm font-medium text-slate-700 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Sin naves visibles para tu organización (aislamiento por tenant).</p>}
-                  {visBuildings.map((b) => (
-                    <div key={b.id} className="space-y-1">
-                      <BuildingForm building={b} isStaff={staff} onSubmitForReview={(id, to, c) => submitForReview('BUILDING', id, to, c)} />
-                      {!readOnly && (
-                        <button type="button" onClick={() => { setEditing(b); setWizardOpen(true); }} className="text-xs font-bold text-brand-blue hover:underline">
-                          Editar en wizard →
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-              {captureTab === 'terrenos' && visLands.map((l) => (
-                <LandForm key={l.id} land={l} onSubmitForReview={(id, to, c) => submitForReview('LAND', id, to, c)} />
-              ))}
-            </div>
+            <CaptureView
+              parks={visParks}
+              buildings={visBuildings}
+              lands={visLands}
+              isStaff={staff}
+              actorOrgId={actor.orgId}
+              onSubmitReview={(kind, id, to, c) => submitForReview(kind, id, to, c)}
+              onUpdatePark={updatePark}
+              onCreatePark={createPark}
+              onNewBuilding={() => { setEditing(null); setWizardOpen(true); }}
+              onEditBuilding={(b) => { setEditing(b); setWizardOpen(true); }}
+            />
           )}
 
           {view === 'validacion' && (
-            <div>
-              {!staff && (
-                <p className="mb-3 rounded-xl bg-[#2563EB]/10 p-3 text-xs font-semibold text-[#1D4ED8] ring-1 ring-[#2563EB]/20">
-                  Vista de operador: ves tus envíos y su estado. Solo Staff puede aprobar (botones deshabilitados por backend).
-                </p>
-              )}
-              {staff ? (
-                <ValidationInbox items={inboxItems} onDecide={decide} spotlight={tourStep === 3 || tourStep === 4} />
-              ) : (
-                <div className="space-y-2">
-                  {inboxItems.length === 0 && <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-sm font-medium text-slate-700 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Sin envíos pendientes de tu organización.</p>}
-                  {inboxItems.map((it) => (
-                    <div key={`${it.kind}-${it.id}`} className="flex items-center justify-between rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-3 pl-5 text-sm shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">
-                      <span className="font-bold text-[#0F172A]">{it.title}</span>
-                      <span className="rounded-full bg-[#2563EB]/10 px-2.5 py-0.5 text-xs font-bold text-[#2563EB]">{it.status}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ValidationView
+              parks={parks}
+              buildings={buildings}
+              lands={lands}
+              audit={audit}
+              actorOrgId={actor.orgId}
+              isStaff={staff}
+              spotlight={tourStep === 3 || tourStep === 4}
+              onDecide={(item, to, comment) => decide(item, to, comment)}
+            />
           )}
 
-          {view === 'auditoria' && <AuditList entries={audit} isStaff={staff} />}
+          {view === 'auditoria' && <AuditView entries={audit} isStaff={staff} />}
         </main>
       </div>
 
