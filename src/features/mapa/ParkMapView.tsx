@@ -6,31 +6,42 @@ import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
 
-const KEYLESS_OSM_MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    'osm-tiles': {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+function rasterStyle(
+  id: string,
+  tiles: string[],
+  attribution: string,
+): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      [id]: { type: 'raster', tiles, tileSize: 256, attribution },
     },
-  },
-  layers: [{ id: 'osm-tiles-layer', type: 'raster', source: 'osm-tiles', minzoom: 0, maxzoom: 19 }],
-};
+    layers: [{ id: `${id}-layer`, type: 'raster', source: id, minzoom: 0, maxzoom: 19 }],
+  };
+}
 
-const ESRI_SAT_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    'esri-sat': {
-      type: 'raster',
-      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-      tileSize: 256,
-      attribution: 'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-    },
-  },
-  layers: [{ id: 'esri-sat-layer', type: 'raster', source: 'esri-sat', minzoom: 0, maxzoom: 19 }],
-};
+// Primary: CartoDB Positron (ultra reliable). Fallback: keyless OSM standard.
+// Satellite: Esri World Imagery. Inline objects — zero style-JSON requests.
+const STYLE_PRIMARY = rasterStyle(
+  'carto-light',
+  [
+    'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+  ],
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+);
+const STYLE_FALLBACK = rasterStyle(
+  'osm-tiles',
+  ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+);
+const STYLE_SAT = rasterStyle(
+  'esri-sat',
+  ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+  'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+);
 
 const STYLE_TIMEOUT_MS = 12000;
 const GDL: [number, number] = [-103.33, 20.62];
@@ -45,14 +56,22 @@ interface CorridorZone {
 
 // Illustrative corridor bounds across the Guadalajara metro area (reference: APIEJ).
 const CORRIDOR_ZONES: CorridorZone[] = [
-  { name: 'Zapopan Norte', color: '#60A5FA', center: [-103.46, 20.76], dx: 0.05, dy: 0.035 },
-  { name: 'Antigua Zona Industrial', color: '#2DD4BF', center: [-103.33, 20.66], dx: 0.045, dy: 0.03 },
-  { name: 'Periférico Sur', color: '#A3E635', center: [-103.38, 20.6], dx: 0.05, dy: 0.025 },
-  { name: 'López Mateos Sur', color: '#3B82F6', center: [-103.46, 20.57], dx: 0.05, dy: 0.03 },
-  { name: 'El Salto', color: '#FB923C', center: [-103.2, 20.52], dx: 0.055, dy: 0.035 },
-  { name: 'Tonalá', color: '#FACC15', center: [-103.24, 20.63], dx: 0.04, dy: 0.03 },
-  { name: 'Circuito Metropolitano Sur', color: '#4ADE80', center: [-103.31, 20.55], dx: 0.05, dy: 0.025 },
-  { name: 'Carretera a Colima', color: '#C084FC', center: [-103.52, 20.48], dx: 0.06, dy: 0.04 },
+  { name: 'Zapopan Norte', color: '#3b82f6', center: [-103.46, 20.76], dx: 0.05, dy: 0.035 },
+  { name: 'Antigua Zona Industrial', color: '#06b6d4', center: [-103.33, 20.66], dx: 0.045, dy: 0.03 },
+  { name: 'Periférico Sur', color: '#84cc16', center: [-103.38, 20.6], dx: 0.05, dy: 0.025 },
+  { name: 'López Mateos Sur', color: '#2563eb', center: [-103.46, 20.57], dx: 0.05, dy: 0.03 },
+  { name: 'El Salto', color: '#f97316', center: [-103.2, 20.52], dx: 0.055, dy: 0.035 },
+  { name: 'Tonalá', color: '#f59e0b', center: [-103.24, 20.63], dx: 0.04, dy: 0.03 },
+  { name: 'Circuito Metropolitano Sur', color: '#a3e635', center: [-103.31, 20.55], dx: 0.05, dy: 0.025 },
+  { name: 'Carretera a Colima', color: '#c084fc', center: [-103.52, 20.48], dx: 0.06, dy: 0.04 },
+];
+
+// Extra locality reference pills (context only — not selectable zones).
+const LOCALITY_PILLS: Array<{ name: string; at: [number, number] }> = [
+  { name: 'La Venta del Astillero', at: [-103.5, 20.73] },
+  { name: 'Santa Anita', at: [-103.44, 20.53] },
+  { name: 'San Agustín', at: [-103.47, 20.53] },
+  { name: 'Tlaquepaque de Zúñiga', at: [-103.31, 20.64] },
 ];
 
 function zoneRing(z: CorridorZone): number[][][] {
@@ -76,7 +95,7 @@ function zoneBounds(z: CorridorZone): maplibregl.LngLatBounds {
 
 function pinStyle(status: Park['status']): { background: string; glyph: string; fg: string } {
   if (status === 'VERIFIED') return { background: '#b3d700', glyph: '✓', fg: '#0F172A' };
-  if (status === 'PENDING_VALIDATION') return { background: '#00a2ff', glyph: '📍', fg: '#ffffff' };
+  if (status === 'PENDING_VALIDATION') return { background: '#00a2ff', glyph: '●', fg: '#ffffff' };
   return { background: '#94a3b8', glyph: '📍', fg: '#ffffff' };
 }
 
@@ -102,6 +121,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   const [fClass, setFClass] = useState<string>('ALL');
   const [fAvail, setFAvail] = useState<string>('ALL');
   const [basemap, setBasemap] = useState<Basemap>('mapa');
+  const basemapRef = useRef<Basemap>('mapa');
   const [showCorr, setShowCorr] = useState(true);
   const [tab, setTab] = useState<SideTab>('corredores');
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -153,15 +173,16 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     clearMarkers();
     filtered.forEach((p) => {
       if (p.lat === undefined || p.lng === undefined) return;
+      const isSel = p.id === selectedId;
       const pin = pinStyle(p.status);
       const el = document.createElement('button');
       el.type = 'button';
       el.title = p.name;
-      el.style.width = '26px';
-      el.style.height = '26px';
+      el.style.width = isSel ? '30px' : '26px';
+      el.style.height = isSel ? '30px' : '26px';
       el.style.borderRadius = '9999px';
-      el.style.background = pin.background;
-      el.style.color = pin.fg;
+      el.style.background = isSel ? '#0F172A' : pin.background;
+      el.style.color = isSel ? '#fff' : pin.fg;
       el.style.fontSize = '13px';
       el.style.fontWeight = '800';
       el.style.display = 'flex';
@@ -170,7 +191,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       el.style.border = '2.5px solid #fff';
       el.style.boxShadow = '0 2px 8px rgba(11,25,44,.4)';
       el.style.cursor = 'pointer';
-      el.textContent = pin.glyph;
+      el.textContent = isSel ? '📍' : pin.glyph;
       el.addEventListener('click', () => {
         setSelectedId(p.id);
         setTab('ficha');
@@ -182,33 +203,34 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   function renderLabels(map: maplibregl.Map): void {
     labelMarkers.current.forEach((m) => m.remove());
     labelMarkers.current = [];
-    CORRIDOR_ZONES.forEach((z) => {
+    const pill = (text: string, at: [number, number], dim: boolean): void => {
       const el = document.createElement('div');
-      el.textContent = z.name;
+      el.textContent = text;
       el.style.background = '#fff';
       el.style.borderRadius = '9999px';
-      el.style.padding = '2px 8px';
-      el.style.fontSize = '10px';
-      el.style.fontWeight = '800';
-      el.style.color = '#0F172A';
+      el.style.padding = dim ? '1px 7px' : '2px 8px';
+      el.style.fontSize = dim ? '9px' : '10px';
+      el.style.fontWeight = dim ? '600' : '800';
+      el.style.color = dim ? '#475569' : '#0F172A';
       el.style.boxShadow = '0 1px 4px rgba(11,25,44,.25)';
       el.style.whiteSpace = 'nowrap';
       el.style.display = showCorr ? 'block' : 'none';
-      labelMarkers.current.push(
-        new maplibregl.Marker({ element: el }).setLngLat(z.center).addTo(map),
-      );
-    });
+      labelMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map));
+    };
+    CORRIDOR_ZONES.forEach((z) => pill(z.name, z.center, false));
+    LOCALITY_PILLS.forEach((l) => pill(l.name, l.at, true));
   }
 
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: KEYLESS_OSM_MAP_STYLE,
+      style: STYLE_PRIMARY,
       center: GDL,
       zoom: 10,
       attributionControl: { compact: true },
     });
+    let fellBack = false;
     map.on('load', () => {
       loaded.current = true;
       addCorridorLayers(map);
@@ -219,8 +241,16 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       addCorridorLayers(map);
       renderLabels(map);
     });
+    // Primary fails while loading → fall back to OSM once. Transient
+    // per-tile errors on a loaded map never block rendering.
     map.on('error', () => {
-      if (loaded.current) return;
+      if (loaded.current || fellBack || basemapRef.current !== 'mapa') return;
+      fellBack = true;
+      try {
+        map.setStyle(STYLE_FALLBACK);
+      } catch {
+        setTileState('error');
+      }
     });
     const timer = window.setTimeout(() => {
       if (!loaded.current) setTileState('error');
@@ -238,9 +268,10 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   useEffect(() => {
     const map = mapObj.current;
     if (map === null) return;
+    basemapRef.current = basemap;
     loaded.current = false;
     setTileState('loading');
-    map.setStyle(basemap === 'mapa' ? KEYLESS_OSM_MAP_STYLE : ESRI_SAT_STYLE);
+    map.setStyle(basemap === 'mapa' ? STYLE_PRIMARY : STYLE_SAT);
     const timer = window.setTimeout(() => {
       if (!loaded.current) setTileState('error');
     }, STYLE_TIMEOUT_MS);
@@ -269,7 +300,17 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 60, maxZoom: 12 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, showCorr]);
+  }, [filtered, showCorr, selectedId]);
+
+  function toggleFullscreen(): void {
+    const host = wrapRef.current;
+    if (host === null) return;
+    if (document.fullscreenElement !== null) {
+      void document.exitFullscreen().catch(() => undefined);
+    } else {
+      void host.requestFullscreen().catch(() => undefined);
+    }
+  }
 
   function fitAll(): void {
     const map = mapObj.current;
@@ -298,6 +339,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     setTab('ficha');
   }
 
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const selCls = 'w-full rounded-xl border border-white/60 bg-[#E0E5EC] px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none';
 
   return (
@@ -309,21 +351,22 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">Mapa del mercado industrial</h2>
           <p className="mt-1 text-sm font-medium text-slate-600">Explora corredores, parques y espacios disponibles.</p>
         </div>
-        <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-          Datos de ejemplo
-        </span>
-        <span className="text-sm font-bold text-slate-800">
-          {parks.length} Parques <span className="mx-1 font-medium text-slate-400">|</span> {buildings.length} Naves <span className="mx-1 font-medium text-slate-400">|</span> {lands.length} Terrenos
+        <span className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">
+          {parks.length} Parques <span className="font-medium text-slate-400">|</span> {buildings.length} Naves <span className="font-medium text-slate-400">|</span> {lands.length} Terrenos
+          <span className="ml-2 rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+            Datos de ejemplo
+          </span>
         </span>
       </div>
 
       {/* Filter toolbar */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-2.5 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+      <div className="mb-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#EBF0F5] p-2.5 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+        <div className="flex flex-wrap items-center gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="🔍 Buscar parque o ubicación"
-          className="w-64 rounded-xl border border-white/50 bg-[#E0E5EC] px-4 py-2 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500 focus:outline-none"
+          className="w-56 rounded-xl border border-white/50 bg-[#E0E5EC] px-3.5 py-1.5 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500 focus:outline-none"
         />
         <select className={`${selCls} w-auto`} value={fCorridor} onChange={(e) => setFCorridor(e.target.value)}>
           <option value="ALL">Corredor: Todos</option>
@@ -347,20 +390,21 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
           <option value="LEASED">Ocupada</option>
           <option value="UNDER_CONSTRUCTION">En construcción</option>
         </select>
+        </div>
         <button
           type="button" onClick={clearFilters}
-          className="px-2 text-xs font-bold text-[#00a2ff] transition hover:underline"
+          className="ml-auto cursor-pointer px-2 text-xs font-bold text-[#00a2ff] transition hover:underline"
         >
           Limpiar
         </button>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Map canvas */}
         <Card>
           <CardBody>
-            <div className="relative">
-              <div ref={mapRef} className="h-[520px] w-full overflow-hidden rounded-[2rem] ring-1 ring-slate-200" />
+            <div ref={wrapRef} className="relative">
+              <div ref={mapRef} className="h-[calc(100vh-280px)] min-h-[520px] w-full overflow-hidden rounded-3xl ring-1 ring-slate-200" />
               {tileState !== 'ready' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-[2rem] bg-[#EBF0F5] p-6 text-center">
                   {tileState === 'loading' ? (
@@ -403,12 +447,12 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   className="flex items-center gap-2 rounded-full border border-white/60 bg-[#EBF0F5] px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
                 >
                   Corredores
-                  <span className={`relative h-4 w-8 rounded-full transition ${showCorr ? 'bg-[#b3d700]' : 'bg-slate-300'}`}>
+                  <span className={`relative h-4 w-8 rounded-full transition ${showCorr ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
                     <i className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all ${showCorr ? 'left-4' : 'left-0.5'}`} />
                   </span>
                   [{showCorr ? 'ON' : 'OFF'}]
                 </button>
-                <div className="flex gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <button
                     type="button" onClick={() => mapObj.current?.zoomIn()} title="Acercar"
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-base font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
@@ -422,6 +466,12 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     −
                   </button>
                   <button
+                    type="button" onClick={toggleFullscreen} title="Pantalla completa"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-xs font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                  >
+                    ⤢
+                  </button>
+                  <button
                     type="button" onClick={fitAll} title="Encuadrar resultados"
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-xs font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
                   >
@@ -431,14 +481,14 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               </div>
             </div>
             {/* Footer bar */}
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500">
-              <span>Propuesta visual · Zonas ilustrativas</span>
-              <span className="flex items-center gap-3 font-bold text-slate-700">
-                <span>🟢 Verificado</span>
-                <span>🔵 En revisión</span>
-                <span>⚪ Borrador</span>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span>Propuesta visual · Zonas ilustrativas</span>
+                <span className="font-bold text-slate-700">🟢 Verificado</span>
+                <span className="font-bold text-slate-700">🔵 En revisión</span>
+                <span className="font-bold text-slate-700">⚪ Borrador</span>
               </span>
-              <span className="ml-auto">© OpenStreetMap contributors · {filtered.length} parques visibles</span>
+              <span className="font-medium">© OpenStreetMap contributors | Referencia de corredores: APIEJ | {filtered.length} parques visibles</span>
             </div>
             {tileState === 'error' && (
               <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
@@ -466,8 +516,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
         </Card>
 
         {/* Sidebar */}
-        <Card>
-          <CardBody>
+        <div className="flex flex-col justify-between rounded-3xl bg-[#EBF0F5] p-5 shadow-[8px_8px_18px_#c5ccd6,-8px_-8px_18px_#ffffff]">
+          <div>
             <div className="mb-3 flex gap-4 border-b border-slate-200">
               {(['corredores', 'ficha'] as SideTab[]).map((t) => (
                 <button
@@ -508,10 +558,9 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 rounded-xl border border-slate-300/40 bg-slate-200/50 p-3 text-xs font-medium text-slate-600">
+                <p className="mt-3 flex items-center gap-2 rounded-2xl bg-slate-200/60 p-3 text-xs font-semibold text-slate-600">
                   📍 Selecciona un parque en el mapa para abrir su ficha.
                 </p>
-                <p className="mt-2 text-[10px] font-medium text-slate-400">Referencia de corredores: APIEJ</p>
               </div>
             )}
 
@@ -597,8 +646,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 )}
               </div>
             )}
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
