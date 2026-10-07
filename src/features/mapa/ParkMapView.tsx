@@ -37,11 +37,24 @@ const STYLE_FALLBACK = rasterStyle(
   ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 );
+const STYLE_HOT = rasterStyle(
+  'osm-hot',
+  [
+    'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    'https://b.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    'https://c.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  ],
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/">Humanitarian OpenStreetMap Team</a>',
+);
 const STYLE_SAT = rasterStyle(
   'esri-sat',
   ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
   'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
 );
+
+// Ordered rescue chain for mapa mode (distinct hosts/providers).
+const MAP_STAGES = [STYLE_PRIMARY, STYLE_FALLBACK, STYLE_HOT];
+const MAP_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org', 'tile.openstreetmap.fr (HOT)'];
 
 const GDL: [number, number] = [-103.33, 20.62];
 
@@ -220,26 +233,33 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     LOCALITY_PILLS.forEach((l) => pill(l.name, l.at, true));
   }
 
-  const stageRef = useRef(0); // 0 = primary, 1 = OSM fallback (mapa mode only)
+  const stageRef = useRef(0); // index into MAP_STAGES (mapa mode only)
   const timers = useRef<number[]>([]);
+  const [failedHosts, setFailedHosts] = useState<string[]>([]);
 
   function clearCascade(): void {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
   }
 
+  function markFailed(): void {
+    const host = MAP_HOSTS[stageRef.current] ?? 'desconocido';
+    setFailedHosts((prev) => (prev.includes(host) ? prev : [...prev, host]));
+  }
+
   /** Advance the mapa-mode cascade. Time-based so hung requests (no error
-   *  events) also trigger the fallback instead of stalling on the watchdog. */
+   *  events) also trigger the next provider instead of stalling. */
   function advanceCascade(map: maplibregl.Map): void {
     if (loaded.current || basemapRef.current !== 'mapa') return;
-    if (stageRef.current >= 1) {
+    markFailed();
+    if (stageRef.current >= MAP_STAGES.length - 1) {
       setTileState('error');
       return;
     }
-    stageRef.current = 1;
+    stageRef.current += 1;
     setTileState('loading');
     try {
-      map.setStyle(STYLE_FALLBACK);
+      map.setStyle(MAP_STAGES[stageRef.current]);
     } catch {
       setTileState('error');
     }
@@ -248,9 +268,30 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   function armWatchdog(map: maplibregl.Map): void {
     clearCascade();
     timers.current.push(window.setTimeout(() => advanceCascade(map), 5000));
+    timers.current.push(window.setTimeout(() => advanceCascade(map), 9000));
     timers.current.push(window.setTimeout(() => {
-      if (!loaded.current) setTileState('error');
-    }, 11000));
+      if (!loaded.current) {
+        markFailed();
+        setTileState('error');
+      }
+    }, 14000));
+  }
+
+  /** Manual recovery: restart the cascade from the primary provider. */
+  function retryTiles(): void {
+    const map = mapObj.current;
+    if (map === null) return;
+    clearCascade();
+    stageRef.current = 0;
+    loaded.current = false;
+    setFailedHosts([]);
+    setTileState('loading');
+    try {
+      map.setStyle(basemapRef.current === 'mapa' ? STYLE_PRIMARY : STYLE_SAT);
+    } catch {
+      setTileState('error');
+    }
+    armWatchdog(map);
   }
 
   useEffect(() => {
@@ -437,8 +478,21 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               )}
               {tileState === 'error' && (
                 <div className="absolute left-1/2 top-3 z-10 w-max max-w-[92%] -translate-x-1/2">
-                  <div className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
-                    <p className="text-[11px] font-bold text-slate-700">Mapa base no disponible tras reintentos — pines y ficha siguen activos.</p>
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-amber-500/40 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+                    <p className="text-[11px] font-bold text-slate-700">Mapa base sin respuesta — pines y ficha siguen activos.</p>
+                    <button
+                      type="button"
+                      onClick={retryTiles}
+                      className="rounded-full bg-[#0F172A] px-3 py-1 text-[11px] font-bold text-white transition hover:opacity-90"
+                    >
+                      Reintentar
+                    </button>
+                    {failedHosts.length > 0 && (
+                      <details className="text-[10px] font-medium text-slate-500">
+                        <summary className="cursor-pointer font-bold hover:underline">Detalle técnico</summary>
+                        <span>Proveedores sin respuesta: {failedHosts.join(' · ')}</span>
+                      </details>
+                    )}
                   </div>
                 </div>
               )}
