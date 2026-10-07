@@ -33,6 +33,26 @@ body {
   animation: apiej-rise 0.45s ease-out both;
 }
 
+/* Slow cinematic zoom for the landing hero photography */
+@keyframes apiej-kenburns {
+  from {
+    transform: scale(1.01);
+  }
+  to {
+    transform: scale(1.09);
+  }
+}
+
+.animate-kenburns {
+  animation: apiej-kenburns 26s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns {
+    animation: none;
+  }
+}
+
 /* Executive report printing: isolate the report sheet */
 @media print {
   body * {

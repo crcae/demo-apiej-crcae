@@ -43,7 +43,6 @@ const STYLE_SAT = rasterStyle(
   'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
 );
 
-const STYLE_TIMEOUT_MS = 12000;
 const GDL: [number, number] = [-103.33, 20.62];
 
 interface CorridorZone {
@@ -221,6 +220,39 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     LOCALITY_PILLS.forEach((l) => pill(l.name, l.at, true));
   }
 
+  const stageRef = useRef(0); // 0 = primary, 1 = OSM fallback (mapa mode only)
+  const timers = useRef<number[]>([]);
+
+  function clearCascade(): void {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+  }
+
+  /** Advance the mapa-mode cascade. Time-based so hung requests (no error
+   *  events) also trigger the fallback instead of stalling on the watchdog. */
+  function advanceCascade(map: maplibregl.Map): void {
+    if (loaded.current || basemapRef.current !== 'mapa') return;
+    if (stageRef.current >= 1) {
+      setTileState('error');
+      return;
+    }
+    stageRef.current = 1;
+    setTileState('loading');
+    try {
+      map.setStyle(STYLE_FALLBACK);
+    } catch {
+      setTileState('error');
+    }
+  }
+
+  function armWatchdog(map: maplibregl.Map): void {
+    clearCascade();
+    timers.current.push(window.setTimeout(() => advanceCascade(map), 5000));
+    timers.current.push(window.setTimeout(() => {
+      if (!loaded.current) setTileState('error');
+    }, 11000));
+  }
+
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
@@ -230,9 +262,9 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       zoom: 10,
       attributionControl: { compact: true },
     });
-    let fellBack = false;
     map.on('load', () => {
       loaded.current = true;
+      clearCascade();
       addCorridorLayers(map);
       renderLabels(map);
       setTileState('ready');
@@ -241,23 +273,13 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       addCorridorLayers(map);
       renderLabels(map);
     });
-    // Primary fails while loading → fall back to OSM once. Transient
+    // Fast path: explicit failures jump the cascade immediately. Transient
     // per-tile errors on a loaded map never block rendering.
-    map.on('error', () => {
-      if (loaded.current || fellBack || basemapRef.current !== 'mapa') return;
-      fellBack = true;
-      try {
-        map.setStyle(STYLE_FALLBACK);
-      } catch {
-        setTileState('error');
-      }
-    });
-    const timer = window.setTimeout(() => {
-      if (!loaded.current) setTileState('error');
-    }, STYLE_TIMEOUT_MS);
+    map.on('error', () => advanceCascade(map));
+    armWatchdog(map);
     mapObj.current = map;
     return () => {
-      window.clearTimeout(timer);
+      clearCascade();
       map.remove();
       mapObj.current = null;
     };
@@ -269,13 +291,13 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     const map = mapObj.current;
     if (map === null) return;
     basemapRef.current = basemap;
+    stageRef.current = 0;
     loaded.current = false;
     setTileState('loading');
     map.setStyle(basemap === 'mapa' ? STYLE_PRIMARY : STYLE_SAT);
-    const timer = window.setTimeout(() => {
-      if (!loaded.current) setTileState('error');
-    }, STYLE_TIMEOUT_MS);
-    return () => window.clearTimeout(timer);
+    armWatchdog(map);
+    return () => clearCascade();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [basemap]);
 
   // Pins + corridor visibility follow filters/toggle.
@@ -416,7 +438,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               {tileState === 'error' && (
                 <div className="absolute left-1/2 top-3 z-10 w-max max-w-[92%] -translate-x-1/2">
                   <div className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
-                    <p className="text-[11px] font-bold text-slate-700">Tiles limitados por red — pines y ficha siguen activos.</p>
+                    <p className="text-[11px] font-bold text-slate-700">Mapa base no disponible tras reintentos — pines y ficha siguen activos.</p>
                   </div>
                 </div>
               )}
