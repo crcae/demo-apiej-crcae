@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { BarChart3, Building2, ChevronLeft, ChevronRight, Map, Warehouse } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { RoadNetworkBg } from '../components/RoadNetworkBg.js';
 import { mockQ1Kpis } from '../mock/market.mock.js';
 import { formatAreaM2, formatPct } from '../utils/formatters.js';
 
-type EntryView = 'dashboard' | 'mapa' | 'inventario' | 'reportes';
+type EntryView = 'dashboard' | 'mapa' | 'reportes';
 
 function go(navigate: (to: string, opts?: { state?: { view?: EntryView } }) => void, view?: EntryView): void {
   navigate('/dashboard', view === undefined ? undefined : { state: { view } });
@@ -18,53 +19,24 @@ function scrollTop(): void {
 const HERO_IMG = '/ChatGPT%20Image%20Oct%206,%202026%20at%2006_46_28%20PM.png';
 const HERO_FALLBACK = '/Industrial%20Logistics%20Park%20at%20Sunset.png';
 
-const STEPS: Array<{ n: string; icon: typeof Map; box: string; title: string; desc: string; view: EntryView; arrow: string; line: string }> = [
-  { n: '01', icon: Warehouse, box: 'bg-amber-500/10 text-amber-600', title: 'Ver propiedades', desc: 'Inventario industrial en renta o venta', view: 'inventario', arrow: 'group-hover:text-amber-500', line: 'group-hover:border-amber-500' },
-  { n: '02', icon: Map, box: 'bg-emerald-500/10 text-emerald-600', title: 'Mapa industrial', desc: 'Parques y corredores de Jalisco', view: 'mapa', arrow: 'group-hover:text-emerald-500', line: 'group-hover:border-emerald-500' },
-  { n: '03', icon: BarChart3, box: 'bg-blue-500/10 text-blue-600', title: 'Indicadores y reportes', desc: 'Análisis trimestral y anual', view: 'reportes', arrow: 'group-hover:text-blue-500', line: 'group-hover:border-blue-500' },
+type ExploreStep =
+  | { n: string; icon: typeof Map; accent: string; title: string; desc: string; kind: 'public' }
+  | { n: string; icon: typeof Map; accent: string; title: string; desc: string; kind: 'system'; view: EntryView };
+
+const STEPS: ExploreStep[] = [
+  { n: '01', icon: Warehouse, accent: '#FF7A00', title: 'Ver propiedades', desc: 'Catálogo público en renta o venta', kind: 'public' },
+  { n: '02', icon: Map, accent: '#10B981', title: 'Entrar al sistema', desc: 'Mapa GIS, captura y validación', kind: 'system', view: 'mapa' },
+  { n: '03', icon: BarChart3, accent: '#4A6CFF', title: 'Indicadores y reportes', desc: 'Análisis trimestral (requiere sesión)', kind: 'system', view: 'reportes' },
 ];
 
 const DEVS = [
-  { name: 'AXIS', cls: 'tracking-wider', sub: 'Parque Industrial', subCls: 'text-[10px] text-slate-500 font-bold uppercase' },
-  { name: 'Bexalta', cls: 'tracking-tight', sub: 'Inmobiliaria Inteligente', subCls: 'text-[10px] text-slate-500 font-semibold' },
-  { name: 'VESTA', cls: 'tracking-widest', sub: '', subCls: '' },
-  { name: 'ELITE', cls: 'tracking-widest', sub: 'LAST MILE INDUSTRIAL PARKS', subCls: 'text-[8px] text-slate-500 font-black tracking-widest' },
+  { name: 'AXIS', sub: 'Parque Industrial' },
+  { name: 'Bexalta', sub: 'Inmobiliaria Inteligente' },
+  { name: 'VESTA', sub: 'Industrial REIT' },
+  { name: 'ELITE', sub: 'Last Mile Parks' },
 ];
 
-function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }): React.JSX.Element {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [vis, setVis] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (el === null) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setVis(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting === true) {
-          setVis(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.12 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return (
-    <div
-      ref={ref}
-      style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-out ${vis ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function useCountUp(target: number, run: boolean, dur = 1500): number {
+function useCountUp(target: number, run: boolean, dur = 1600): number {
   const [v, setV] = useState(0);
   useEffect(() => {
     if (!run) return;
@@ -83,13 +55,14 @@ function useCountUp(target: number, run: boolean, dur = 1500): number {
 
 export function LandingPage(): React.JSX.Element {
   const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const stripRef = useRef<HTMLDivElement | null>(null);
   const [heroSrc, setHeroSrc] = useState(HERO_IMG);
   const [statsOn, setStatsOn] = useState(false);
   const [stripPaused, setStripPaused] = useState(false);
 
   useEffect(() => {
-    const t = window.setTimeout(() => setStatsOn(true), 350);
+    const t = window.setTimeout(() => setStatsOn(true), 400);
     return () => window.clearTimeout(t);
   }, []);
 
@@ -108,204 +81,246 @@ export function LandingPage(): React.JSX.Element {
   const vac = useCountUp(mockQ1Kpis.vacancyPct, statsOn);
   const rent = useCountUp(mockQ1Kpis.avgRentUsd ?? 0, statsOn);
 
-  const stats: Array<{ value: string; label: string; bar: string; glow: string }> = [
-    { value: formatAreaM2(inv), label: 'Inventario industrial', bar: 'border-[#FF7A00]', glow: 'hover:shadow-[0_18px_40px_-18px_rgba(255,122,0,0.55)]' },
-    { value: formatPct(vac), label: 'Tasa de disponibilidad', bar: 'border-[#10B981]', glow: 'hover:shadow-[0_18px_40px_-18px_rgba(16,185,129,0.55)]' },
-    { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', bar: 'border-[#4A6CFF]', glow: 'hover:shadow-[0_18px_40px_-18px_rgba(74,108,255,0.55)]' },
-  ];
+  const fadeUp = reduce
+    ? {}
+    : { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.2 }, transition: { duration: 0.55 } };
 
   function nudge(dir: 1 | -1): void {
     stripRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' });
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-clip bg-[#F8FAFC] text-slate-950">
+    <div className="relative min-h-screen w-full overflow-x-clip bg-[#0B1228] text-slate-950">
       <RoadNetworkBg />
-      <span aria-hidden="true" className="pointer-events-none absolute -top-24 right-[8%] z-[1] h-96 w-96 rounded-full bg-[#4A6CFF]/12 blur-3xl" />
-      <span aria-hidden="true" className="pointer-events-none absolute left-[4%] top-[38%] z-[1] h-80 w-80 rounded-full bg-[#FF7A00]/10 blur-3xl" />
-      <span aria-hidden="true" className="pointer-events-none absolute bottom-[12%] right-[12%] z-[1] h-72 w-72 rounded-full bg-[#10B981]/10 blur-3xl" />
 
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[#0E1A3D]/95 px-6 py-3.5 text-white backdrop-blur-md md:px-8">
-        <button type="button" onClick={scrollTop} title="Inicio APIEJ" className="flex items-center">
-          <img src="/apiej_logo.png" alt="APIEJ" className="h-9 w-auto object-contain brightness-0 invert" />
-          <span className="ml-3 hidden border-l border-white/25 pl-3 text-xs font-bold tracking-wider text-white/65 sm:block">
-            JALISCO INTELLIGENCE
-          </span>
-        </button>
-        <nav className="hidden items-center gap-7 text-xs font-bold text-white/80 md:flex">
-          <button type="button" onClick={() => go(navigate, 'inventario')} className="transition-colors hover:text-white">
-            Ver propiedades
-          </button>
-          <button type="button" onClick={() => go(navigate, 'mapa')} className="transition-colors hover:text-white">
-            Mapa industrial
-          </button>
-          <a href="#cifras" className="transition-colors hover:text-white">Indicadores</a>
-          <a href="#institucional" className="transition-colors hover:text-white">Conoce APIEJ</a>
-        </nav>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => go(navigate, 'inventario')}
-            className="hidden cursor-pointer items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/15 sm:flex"
-          >
-            <Building2 size={14} /> Ver propiedades
-          </button>
-          <button
-            type="button"
-            onClick={() => go(navigate)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#3b5aef] hover:shadow-lg"
-          >
-            Iniciar sesión ↗
-          </button>
+      {/* Header — navy + tricolor brand bar */}
+      <header className="sticky top-0 z-50 text-white">
+        <div className="border-b border-white/10 bg-[#0E1A3D]/92 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5 md:px-8">
+            <button type="button" onClick={scrollTop} title="Inicio APIEJ" className="flex items-center">
+              <img src="/apiej_logo.png" alt="APIEJ" className="h-9 w-auto object-contain brightness-0 invert" />
+              <span className="ml-3 hidden border-l border-white/25 pl-3 text-[10px] font-bold tracking-[0.18em] text-white/65 sm:block">
+                JALISCO INTELLIGENCE
+              </span>
+            </button>
+            <nav className="hidden items-center gap-7 text-xs font-bold text-white/80 md:flex">
+              <button type="button" onClick={() => navigate('/propiedades')} className="transition hover:text-[#4A6CFF]">Ver propiedades</button>
+              <button type="button" onClick={() => go(navigate, 'mapa')} className="transition hover:text-[#4A6CFF]">Entrar al sistema</button>
+              <a href="#cifras" className="transition hover:text-[#4A6CFF]">Indicadores</a>
+              <a href="#institucional" className="transition hover:text-[#4A6CFF]">Conoce APIEJ</a>
+            </nav>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/propiedades')}
+                className="hidden items-center gap-1.5 rounded-xl border border-[#FF7A00]/50 bg-[#FF7A00]/15 px-4 py-2.5 text-xs font-bold text-[#FFB366] transition hover:bg-[#FF7A00]/25 sm:flex"
+              >
+                <Building2 size={14} /> Ver propiedades
+              </button>
+              <button
+                type="button"
+                onClick={() => go(navigate)}
+                className="rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#4A6CFF]/25 transition hover:-translate-y-0.5 hover:bg-[#3b5aef]"
+              >
+                Iniciar sesión ↗
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex h-[3px] w-full" aria-hidden="true">
+          <span className="flex-1 bg-[#FF7A00]" />
+          <span className="flex-1 bg-[#10B981]" />
+          <span className="flex-1 bg-[#4A6CFF]" />
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 md:px-6">
-        <section className="relative mb-10 mt-6 flex min-h-[520px] w-full items-stretch overflow-hidden rounded-3xl border border-[#0E1A3D]/40 bg-[#0E1A3D] shadow-2xl md:min-h-[560px]">
-          <img
-            src={heroSrc}
-            alt="Parque industrial de Jalisco al atardecer"
-            onError={() => { if (heroSrc !== HERO_FALLBACK) setHeroSrc(HERO_FALLBACK); }}
-            className="animate-kenburns absolute inset-0 z-0 h-full w-full object-cover object-center"
-          />
-          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[#0E1A3D]/95 via-[#0E1A3D]/50 to-transparent" />
-          <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-[#0E1A3D]/70 via-transparent to-transparent md:hidden" />
+      {/* Hero — full-bleed composition */}
+      <section className="relative z-10 min-h-[min(92vh,820px)] w-full overflow-hidden">
+        <img
+          src={heroSrc}
+          alt="Parque industrial de Jalisco al atardecer"
+          onError={() => { if (heroSrc !== HERO_FALLBACK) setHeroSrc(HERO_FALLBACK); }}
+          className="animate-kenburns absolute inset-0 h-full w-full object-cover object-center"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0E1A3D]/95 via-[#0E1A3D]/70 to-[#0E1A3D]/25" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1228] via-transparent to-[#0E1A3D]/40" />
 
-          <div className="absolute bottom-8 left-8 z-20 hidden items-center gap-2 rounded-full border border-white/20 bg-[#0E1A3D]/55 px-4 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-md md:flex">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" />
-            Q1 2026 · 68,500 m² verificados
-          </div>
-
-          <div className="animate-enter relative z-20 ml-auto flex w-full max-w-xl flex-col justify-center p-8 md:p-12">
+        <div className="relative z-20 mx-auto flex min-h-[min(92vh,820px)] w-full max-w-6xl flex-col justify-center px-5 py-16 md:px-8">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 36 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-2xl"
+          >
             <div className="flex items-center gap-2.5">
-              <span className="flex flex-row gap-1.5" aria-hidden="true">
-                <i className="h-1.5 w-6 rounded-full bg-[#FF7A00] shadow-[0_0_12px_rgba(255,122,0,0.8)]" />
-                <i className="h-1.5 w-6 rounded-full bg-[#10B981] shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
-                <i className="h-1.5 w-6 rounded-full bg-[#4A6CFF] shadow-[0_0_12px_rgba(74,108,255,0.8)]" />
+              <span className="flex gap-1.5" aria-hidden="true">
+                <i className="h-1.5 w-7 rounded-full bg-[#FF7A00] shadow-[0_0_14px_rgba(255,122,0,0.9)]" />
+                <i className="h-1.5 w-7 rounded-full bg-[#10B981] shadow-[0_0_14px_rgba(16,185,129,0.9)]" />
+                <i className="h-1.5 w-7 rounded-full bg-[#4A6CFF] shadow-[0_0_14px_rgba(74,108,255,0.9)]" />
               </span>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-200">
-                APIEJ / Observatorio Industrial
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
+                APIEJ · Observatorio Industrial
               </span>
             </div>
-            <h1 className="mt-3 text-4xl font-black leading-none tracking-tight text-white drop-shadow-lg md:text-5xl">
-              El pulso industrial de Jalisco.
+            <h1 className="font-display mt-5 text-5xl font-black leading-[0.95] tracking-tight text-white drop-shadow-lg md:text-7xl">
+              APIEJ
             </h1>
-            <p className="mt-4 text-lg font-bold text-white drop-shadow md:text-xl">
-              Datos claros. Mejores decisiones.
+            <p className="mt-3 text-2xl font-extrabold tracking-tight text-white md:text-3xl">
+              El pulso industrial de Jalisco.
             </p>
-            <p className="mt-1 text-sm font-medium text-slate-300">
-              Inventario, disponibilidad y tendencias del mercado.
+            <p className="mt-4 max-w-lg text-sm font-medium leading-relaxed text-white/75 md:text-base">
+              Inventario, disponibilidad y tendencias del mercado — una sola fuente de verdad para socios y tomadores de decisión.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <button
+            <div className="mt-8 flex flex-wrap gap-3">
+              <motion.button
                 type="button"
-                onClick={() => go(navigate, 'inventario')}
-                className="flex transform cursor-pointer items-center gap-2 rounded-2xl bg-[#FF7A00] px-7 py-3.5 text-sm font-black tracking-wide text-white shadow-2xl transition-all duration-200 hover:scale-[1.03] hover:bg-[#e86e00]"
+                whileHover={reduce ? undefined : { scale: 1.03 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                onClick={() => navigate('/propiedades')}
+                className="rounded-2xl bg-[#FF7A00] px-8 py-3.5 text-sm font-black text-white shadow-2xl shadow-[#FF7A00]/35 transition hover:bg-[#e86e00]"
               >
                 Ver propiedades ➔
-              </button>
+              </motion.button>
               <button
                 type="button"
                 onClick={() => go(navigate, 'mapa')}
-                className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+                className="rounded-2xl border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
               >
-                Explorar mapa
+                Explorar mapa GIS
               </button>
             </div>
-            <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-[#0E1A3D]/60 px-3.5 py-1 text-xs font-semibold text-white/95 shadow-sm backdrop-blur-md">
-              ✔ Acceso público · Sin registro
-            </span>
-          </div>
-        </section>
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#0E1A3D]/55 px-3.5 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur">
+              <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#10B981]" />
+              Acceso público · Sin registro · Demo 2026
+            </p>
+          </motion.div>
+        </div>
+      </section>
 
-        <section id="cifras" className="mb-12 scroll-mt-24">
-          <Reveal>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-2xl font-black text-[#0E1A3D]">El mercado en cifras</h2>
+      {/* Content on lighter surface */}
+      <div className="relative z-10 bg-[#F8FAFC]">
+        <div className="mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
+          <section id="cifras" className="scroll-mt-28">
+            <motion.div {...fadeUp} className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A6CFF]">Mercado en vivo</p>
+                <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">El mercado en cifras</h2>
+              </div>
               <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                 <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                T1 · Cifras ilustrativas · LIVE
+                T1 · Ilustrativo · LIVE
               </span>
-            </div>
-          </Reveal>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {stats.map((s, i) => (
-              <Reveal key={s.label} delay={i * 90}>
-                <div className={`h-full rounded-2xl border border-slate-200/60 border-t-4 ${s.bar} bg-white/90 p-6 shadow-md backdrop-blur transition-all duration-300 hover:-translate-y-1 ${s.glow}`}>
+            </motion.div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {[
+                { value: formatAreaM2(inv), label: 'Inventario industrial', color: '#FF7A00' },
+                { value: formatPct(vac), label: 'Tasa de disponibilidad', color: '#10B981' },
+                { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', color: '#4A6CFF' },
+              ].map((s, i) => (
+                <motion.div
+                  key={s.label}
+                  initial={reduce ? false : { opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.5 }}
+                  whileHover={reduce ? undefined : { y: -4 }}
+                  className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-md"
+                  style={{ borderTopWidth: 4, borderTopColor: s.color }}
+                >
                   <p className="text-3xl font-black tabular-nums text-[#0E1A3D]">{s.value}</p>
                   <p className="mt-2 text-xs font-bold text-slate-500">{s.label}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
+                </motion.div>
+              ))}
+            </div>
+          </section>
 
-        <section id="explora" className="mb-12 scroll-mt-24">
-          <Reveal>
-            <h2 className="font-display text-2xl font-black text-[#0E1A3D]">Explora el mercado</h2>
-            <p className="mb-4 mt-1 text-xs font-medium text-slate-500">Encuentra espacios. Ubica oportunidades. Entiende el mercado.</p>
-          </Reveal>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {STEPS.map((c, i) => (
-              <Reveal key={c.n} delay={i * 90}>
-                <button
+          <section id="explora" className="mt-16 scroll-mt-28">
+            <motion.div {...fadeUp}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF7A00]">Explora</p>
+              <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">Tres puertas al mercado</h2>
+              <p className="mt-1 text-sm font-medium text-slate-500">Encuentra espacios. Ubica oportunidades. Entiende el mercado.</p>
+            </motion.div>
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+              {STEPS.map((c, i) => (
+                <motion.button
+                  key={c.n}
                   type="button"
-                  onClick={() => go(navigate, c.view)}
-                  className={`group relative flex h-full w-full cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/95 p-6 text-left shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${c.line} border-b-4`}
+                  onClick={() => {
+                    if (c.kind === 'public') navigate('/propiedades');
+                    else go(navigate, c.view);
+                  }}
+                  initial={reduce ? false : { opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  whileHover={reduce ? undefined : { y: -6 }}
+                  className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-md transition"
+                  style={{ borderBottomWidth: 4, borderBottomColor: c.accent }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={`w-fit rounded-xl p-2.5 transition-transform duration-300 group-hover:scale-110 ${c.box}`}>
-                      <c.icon size={20} />
-                    </span>
-                    <span className="absolute right-6 top-6 text-2xl font-black text-slate-300">{c.n}</span>
-                  </div>
-                  <p className="mt-4 text-lg font-extrabold text-[#0E1A3D]">{c.title}</p>
+                  <span className="absolute right-5 top-5 text-2xl font-black text-slate-200">{c.n}</span>
+                  <span
+                    className="flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-110"
+                    style={{ background: `${c.accent}18`, color: c.accent }}
+                  >
+                    <c.icon size={20} />
+                  </span>
+                  <p className="mt-5 text-lg font-extrabold text-[#0E1A3D]">{c.title}</p>
                   <p className="mt-1 text-xs text-slate-500">{c.desc}</p>
-                  <p className={`mt-4 text-base font-bold text-slate-400 transition-all group-hover:translate-x-1 ${c.arrow}`}>➔</p>
-                </button>
-              </Reveal>
-            ))}
-          </div>
-        </section>
+                  <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {c.kind === 'public' ? 'Sin sesión' : 'Requiere sesión'}
+                  </p>
+                  <p className="mt-3 text-sm font-bold transition group-hover:translate-x-1" style={{ color: c.accent }}>➔</p>
+                </motion.button>
+              ))}
+            </div>
+          </section>
 
-        <section className="mb-12">
-          <Reveal>
-            <div className="flex items-end justify-between">
+          <section className="mt-16">
+            <motion.div {...fadeUp} className="flex items-end justify-between gap-3">
               <div>
-                <h2 className="font-display text-2xl font-black text-[#0E1A3D]">Nuestros colaboradores</h2>
-                <p className="mt-0.5 block text-xs font-medium text-slate-500">Desarrolladores</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#10B981]">Ecosistema</p>
+                <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">Nuestros colaboradores</h2>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => nudge(-1)} title="Anterior" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-slate-300 text-slate-600 shadow-sm transition hover:bg-slate-100">
+                <button type="button" onClick={() => nudge(-1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-white">
                   <ChevronLeft size={15} />
                 </button>
-                <button type="button" onClick={() => nudge(1)} title="Siguiente" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-slate-300 text-slate-600 shadow-sm transition hover:bg-slate-100">
+                <button type="button" onClick={() => nudge(1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-white">
                   <ChevronRight size={15} />
                 </button>
               </div>
+            </motion.div>
+            <div
+              ref={stripRef}
+              onMouseEnter={() => setStripPaused(true)}
+              onMouseLeave={() => setStripPaused(false)}
+              className="mt-5 flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-4 md:overflow-visible [&::-webkit-scrollbar]:hidden"
+            >
+              {DEVS.map((d) => (
+                <div
+                  key={d.name}
+                  className="w-52 shrink-0 rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#4A6CFF]/40 hover:shadow-lg md:w-auto"
+                >
+                  <p className="text-2xl font-black tracking-tight text-[#0E1A3D]">{d.name}</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">{d.sub}</p>
+                </div>
+              ))}
             </div>
-          </Reveal>
-          <div
-            ref={stripRef}
-            onMouseEnter={() => setStripPaused(true)}
-            onMouseLeave={() => setStripPaused(false)}
-            onTouchStart={() => setStripPaused(true)}
-            onTouchEnd={() => setStripPaused(false)}
-            className="my-4 flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-4 md:overflow-visible [&::-webkit-scrollbar]:hidden"
-          >
-            {DEVS.map((d) => (
-              <div key={d.name} className="w-52 shrink-0 rounded-2xl bg-white px-6 py-7 text-center shadow-md ring-1 ring-slate-200/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-[#4A6CFF]/40 md:w-auto">
-                <p className={`text-2xl font-black text-[#0E1A3D] ${d.cls}`}>{d.name}</p>
-                {d.sub !== '' && <p className={`mt-1 ${d.subCls}`}>{d.sub}</p>}
-              </div>
-            ))}
-          </div>
-        </section>
+          </section>
 
-        <section id="institucional" className="my-10 scroll-mt-24">
-          <Reveal>
-            <div className="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-3xl border border-[#0E1A3D]/10 bg-gradient-to-br from-[#0E1A3D] to-[#1a2d5c] p-8 text-white shadow-lg md:grid-cols-12 md:p-10">
+          <section id="institucional" className="mt-16 scroll-mt-28">
+            <motion.div
+              {...fadeUp}
+              className="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E1A3D] via-[#152552] to-[#1a2d5c] p-8 text-white shadow-xl md:grid-cols-12 md:p-12"
+            >
+              <div className="pointer-events-none absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#4A6CFF]/20 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-0 left-10 h-40 w-40 rounded-full bg-[#FF7A00]/15 blur-3xl" />
               <div className="relative rounded-2xl border border-white/15 bg-white/10 p-8 text-center backdrop-blur md:col-span-5">
+                <div className="mb-4 flex justify-center gap-1.5" aria-hidden="true">
+                  <i className="h-2 w-2 rounded-full bg-[#FF7A00]" />
+                  <i className="h-2 w-2 rounded-full bg-[#10B981]" />
+                  <i className="h-2 w-2 rounded-full bg-[#4A6CFF]" />
+                </div>
                 <img src="/apiej_logo.png" alt="APIEJ" className="mx-auto h-16 w-auto object-contain brightness-0 invert" />
                 <p className="mt-4 text-[9px] font-extrabold uppercase tracking-widest text-white/50">
                   Asociación de Parques Industriales del Estado de Jalisco
@@ -324,22 +339,22 @@ export function LandingPage(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={() => go(navigate)}
-                  className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#4A6CFF] px-7 py-3 text-xs font-extrabold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[#3b5aef]"
+                  className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-[#4A6CFF] px-7 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#3b5aef]"
                 >
                   Entrar a la plataforma ↗
                 </button>
               </div>
-            </div>
-          </Reveal>
-        </section>
-      </div>
-
-      <footer className="relative z-10 border-t border-slate-200 bg-white/80">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-6 text-xs text-slate-400 md:px-6">
-          <span className="font-bold text-[#0E1A3D]/70">APIEJ · Observatorio Industrial</span>
-          <span>Demo presentación · 2026</span>
+            </motion.div>
+          </section>
         </div>
-      </footer>
+
+        <footer className="border-t border-slate-200 bg-white/90">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 text-xs text-slate-400 md:px-8">
+            <span className="font-bold text-[#0E1A3D]/70">APIEJ · Observatorio Industrial</span>
+            <span>Demo presentación · 2026</span>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

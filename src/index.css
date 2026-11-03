@@ -53,64 +53,57 @@ body {
   }
 }
 
-/* Landing: subtle animated road network */
+/* Landing: animated road network */
 @keyframes road-dash {
   to {
-    stroke-dashoffset: -240;
+    stroke-dashoffset: -280;
   }
 }
 
 @keyframes road-pulse {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.35);
+    transform: scale(1.45);
   }
 }
 
 .road-line {
-  stroke-dasharray: 12 18;
-  animation: road-dash 28s linear infinite;
+  stroke-dasharray: 10 16;
+  animation: road-dash 24s linear infinite;
 }
 
-.road-a {
-  animation-duration: 32s;
-}
-.road-b {
-  animation-duration: 26s;
-  animation-direction: reverse;
-}
-.road-c {
-  animation-duration: 36s;
-}
-.road-d {
-  animation-duration: 30s;
-  animation-direction: reverse;
-}
-.road-e {
-  animation-duration: 40s;
-}
-.road-f {
-  animation-duration: 34s;
-  animation-direction: reverse;
-}
-.road-g {
-  animation-duration: 38s;
-}
+.road-a { animation-duration: 28s; }
+.road-b { animation-duration: 22s; animation-direction: reverse; }
+.road-c { animation-duration: 30s; }
+.road-d { animation-duration: 26s; animation-direction: reverse; }
+.road-e { animation-duration: 34s; }
+.road-f { animation-duration: 29s; animation-direction: reverse; }
+.road-g { animation-duration: 32s; }
+.road-h { animation-duration: 25s; }
+.road-i { animation-duration: 27s; animation-direction: reverse; }
 
 .road-node {
+  transform-box: fill-box;
   transform-origin: center;
-  animation: road-pulse 4.5s ease-in-out infinite;
+  animation: road-pulse 3.8s ease-in-out infinite;
+}
+
+.road-pulse-dot {
+  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.65));
 }
 
 @media (prefers-reduced-motion: reduce) {
   .road-line,
   .road-node {
     animation: none;
+  }
+  .road-pulse-dot {
+    display: none;
   }
 }
 

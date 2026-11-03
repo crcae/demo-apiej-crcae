@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage.js';
+import { PublicPropertiesPage } from './pages/PublicPropertiesPage.js';
 import { AppHeader } from './components/AppHeader.js';
 import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
@@ -24,7 +25,7 @@ import { computeLiveKpis } from './services/analyticsService.js';
 import { classifyFxSource, fetchLiveFxRate, invalidateFxCache, resolveFx, type FxSource } from './services/fxService.js';
 import { isStaff, listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
 import { PERSONAS } from './store/personas.js';
-import type { AuditEntry, Building, DemoPersonaKey, EntityStatus, Park } from './types/domain.js';
+import type { AuditEntry, Building, DemoPersonaKey, EntityStatus, IndustrialListing, Park } from './types/domain.js';
 import './App.css';
 
 type View = 'dashboard' | 'mapa' | 'inventario' | 'captura' | 'validacion' | 'reportes' | 'auditoria';
@@ -55,6 +56,7 @@ function PlatformApp(): React.JSX.Element {
   const [parks, setParks] = useState(mockParks);
   const [buildings, setBuildings] = useState<Building[]>(mockBuildings);
   const [lands, setLands] = useState(mockLands);
+  const [listings, setListings] = useState<IndustrialListing[]>(mockListings);
   const [audit, setAudit] = useState<AuditEntry[]>(mockAuditSeed);
   const [toast, setToast] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -447,7 +449,16 @@ function PlatformApp(): React.JSX.Element {
             </Suspense>
           )}
 
-          {view === 'inventario' && <InventoryView listings={mockListings} />}
+          {view === 'inventario' && (
+            <InventoryView
+              listings={listings}
+              mode="manage"
+              onUpdateListing={(id, patch) => {
+                setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+                flash('Propiedad actualizada en inventario demo.');
+              }}
+            />
+          )}
 
           {view === 'captura' && !readOnly && (
             <CaptureView
@@ -523,6 +534,7 @@ function App(): React.JSX.Element {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/propiedades" element={<PublicPropertiesPage />} />
         <Route path="/dashboard" element={<PlatformApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

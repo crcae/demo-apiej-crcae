@@ -1,18 +1,29 @@
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { IndustrialListing } from '../../types/domain.js';
+import type { AvailabilityState, IndustrialListing, ListingDealType } from '../../types/domain.js';
 import { formatAreaM2 } from '../../utils/formatters.js';
+
+export type InventoryMode = 'public' | 'manage';
 
 interface Props {
   listings: IndustrialListing[];
+  mode?: InventoryMode;
+  onUpdateListing?: (id: string, patch: Partial<IndustrialListing>) => void;
 }
 
-export function InventoryView({ listings }: Props): React.JSX.Element {
+const AVAIL: AvailabilityState[] = [
+  'AVAILABLE', 'RESERVED', 'LEASED', 'SOLD', 'UNDER_CONSTRUCTION', 'OFF_MARKET',
+];
+
+export function InventoryView({ listings, mode = 'public', onUpdateListing }: Props): React.JSX.Element {
+  const manage = mode === 'manage';
   const [query, setQuery] = useState('');
   const [deal, setDeal] = useState<'ALL' | 'RENT' | 'SALE'>('ALL');
   const [corridor, setCorridor] = useState('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<IndustrialListing> | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
@@ -33,6 +44,23 @@ export function InventoryView({ listings }: Props): React.JSX.Element {
   }, [listings, query, deal, corridor]);
 
   const selected = filtered.find((l) => l.id === selectedId) ?? filtered[0] ?? null;
+
+  useEffect(() => {
+    if (selected === null) {
+      setDraft(null);
+      return;
+    }
+    setDraft({
+      title: selected.title,
+      priceLabel: selected.priceLabel,
+      areaM2: selected.areaM2,
+      dealType: selected.dealType,
+      availabilityState: selected.availabilityState,
+      listedBy: selected.listedBy,
+      municipality: selected.municipality,
+      corridor: selected.corridor,
+    });
+  }, [selected?.id]);
 
   useEffect(() => {
     if (mapRef.current === null || mapObj.current !== null) return;
@@ -90,13 +118,30 @@ export function InventoryView({ listings }: Props): React.JSX.Element {
     mapObj.current.easeTo({ center: [selected.lng, selected.lat], zoom: Math.max(mapObj.current.getZoom(), 11.5), duration: 500 });
   }, [selected?.id]);
 
+  function saveDraft(): void {
+    if (selected === null || draft === null || onUpdateListing === undefined) return;
+    onUpdateListing(selected.id, draft);
+    setSavedFlash(true);
+    window.setTimeout(() => setSavedFlash(false), 2200);
+  }
+
+  const inputCls = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#4A6CFF]';
+
   return (
     <div>
-      <p className="text-xs font-medium text-slate-500">Panel / Inventario Industrial</p>
+      <p className="text-xs font-medium text-slate-500">
+        {manage ? 'Sistema / Inventario Industrial' : 'Catálogo público / Propiedades'}
+      </p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Inventario industrial</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">Propiedades publicadas en el observatorio APIEJ.</p>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">
+            {manage ? 'Inventario industrial' : 'Propiedades industriales'}
+          </h2>
+          <p className="mt-1 text-sm font-medium text-slate-600">
+            {manage
+              ? 'Edita fichas mock para la demo. Los cambios se reflejan en lista y mapa.'
+              : 'Consulta disponibilidad sin iniciar sesión.'}
+          </p>
         </div>
         <span className="rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold text-slate-700">
           {filtered.length} propiedades
@@ -121,7 +166,7 @@ export function InventoryView({ listings }: Props): React.JSX.Element {
         </select>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]">
+      <div className={`grid gap-4 ${manage ? 'lg:grid-cols-[minmax(0,1fr)_minmax(300px,34%)_minmax(280px,30%)]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]'}`}>
         <div className="max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pr-1">
           {filtered.length === 0 && (
             <p className="rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-900">Ninguna propiedad coincide con los filtros.</p>
@@ -166,6 +211,78 @@ export function InventoryView({ listings }: Props): React.JSX.Element {
             </div>
           )}
         </div>
+
+        {manage && selected !== null && draft !== null && (
+          <div className="sticky top-[4.5rem] max-h-[calc(100vh-200px)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Editar ficha</p>
+            <p className="mt-0.5 text-sm font-extrabold text-[#0E1A3D]">{selected.code}</p>
+            <div className="mt-3 space-y-2.5">
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Título</span>
+                <input className={inputCls} value={draft.title ?? ''} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Precio (etiqueta)</span>
+                <input className={inputCls} value={draft.priceLabel ?? ''} onChange={(e) => setDraft({ ...draft, priceLabel: e.target.value })} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Área m²</span>
+                <input
+                  className={inputCls}
+                  inputMode="decimal"
+                  value={String(draft.areaM2 ?? '')}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setDraft({ ...draft, areaM2: Number.isFinite(n) ? n : 0 });
+                  }}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Tipo de operación</span>
+                <select
+                  className={inputCls}
+                  value={draft.dealType ?? 'RENT'}
+                  onChange={(e) => setDraft({ ...draft, dealType: e.target.value as ListingDealType })}
+                >
+                  <option value="RENT">Renta</option>
+                  <option value="SALE">Venta</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Disponibilidad</span>
+                <select
+                  className={inputCls}
+                  value={draft.availabilityState ?? 'AVAILABLE'}
+                  onChange={(e) => setDraft({ ...draft, availabilityState: e.target.value as AvailabilityState })}
+                >
+                  {AVAIL.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Listed by</span>
+                <input className={inputCls} value={draft.listedBy ?? ''} onChange={(e) => setDraft({ ...draft, listedBy: e.target.value })} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Municipio</span>
+                <input className={inputCls} value={draft.municipality ?? ''} onChange={(e) => setDraft({ ...draft, municipality: e.target.value })} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-bold text-slate-500">Corredor</span>
+                <input className={inputCls} value={draft.corridor ?? ''} onChange={(e) => setDraft({ ...draft, corridor: e.target.value })} />
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="mt-4 w-full rounded-xl bg-[#0E1A3D] px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#152552]"
+            >
+              Guardar cambios
+            </button>
+            {savedFlash && (
+              <p className="mt-2 text-center text-[11px] font-bold text-emerald-600">✓ Guardado en inventario demo</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

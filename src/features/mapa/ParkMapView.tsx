@@ -96,9 +96,14 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   const [basemap, setBasemap] = useState<Basemap>('satelite');
   const basemapRef = useRef<Basemap>('satelite');
   const [showCorr, setShowCorr] = useState(true);
+  const [activeCorridorId, setActiveCorridorId] = useState<string | null>(null);
+  const [hoverCorridorId, setHoverCorridorId] = useState<string | null>(null);
   const [tab, setTab] = useState<SideTab>('corredores');
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
   const loaded = useRef(false);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const activeCorridorRef = useRef<string | null>(null);
+  activeCorridorRef.current = activeCorridorId;
 
   const corridors = useMemo(() => [...new Set(parks.map((p) => p.corridor))], [parks]);
 
@@ -137,19 +142,85 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     .filter((b) => b.availabilityState === 'AVAILABLE')
     .reduce((s, b) => s + b.netRentableM2, 0);
 
+  function paintCorridorEmphasis(map: maplibregl.Map, focusId: string | null): void {
+    if (map.getLayer('corr-fill') === undefined) return;
+    if (focusId === null) {
+      map.setPaintProperty('corr-fill', 'fill-opacity', 0.5);
+      map.setPaintProperty('corr-line', 'line-width', 4);
+      map.setPaintProperty('corr-line', 'line-opacity', 1);
+      if (map.getLayer('corr-glow') !== undefined) {
+        map.setPaintProperty('corr-glow', 'line-opacity', 0.35);
+        map.setPaintProperty('corr-glow', 'line-width', 10);
+      }
+      return;
+    }
+    map.setPaintProperty('corr-fill', 'fill-opacity', [
+      'case', ['==', ['get', 'id'], focusId], 0.78, 0.12,
+    ]);
+    map.setPaintProperty('corr-line', 'line-width', [
+      'case', ['==', ['get', 'id'], focusId], 6, 1.5,
+    ]);
+    map.setPaintProperty('corr-line', 'line-opacity', [
+      'case', ['==', ['get', 'id'], focusId], 1, 0.35,
+    ]);
+    if (map.getLayer('corr-glow') !== undefined) {
+      map.setPaintProperty('corr-glow', 'line-opacity', [
+        'case', ['==', ['get', 'id'], focusId], 0.55, 0.05,
+      ]);
+      map.setPaintProperty('corr-glow', 'line-width', [
+        'case', ['==', ['get', 'id'], focusId], 14, 4,
+      ]);
+    }
+  }
+
   function addCorridorLayers(map: maplibregl.Map): void {
     if (map.getSource('corridors') !== undefined) return;
-    map.addSource('corridors', { type: 'geojson', data: CORRIDOR_FC });
+    map.addSource('corridors', { type: 'geojson', data: CORRIDOR_FC, promoteId: 'id' });
+    map.addLayer({
+      id: 'corr-glow', type: 'line', source: 'corridors',
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 10,
+        'line-opacity': 0.35,
+        'line-blur': 6,
+      },
+      layout: { visibility: showCorr ? 'visible' : 'none' },
+    });
     map.addLayer({
       id: 'corr-fill', type: 'fill', source: 'corridors',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.42 },
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.5 },
       layout: { visibility: showCorr ? 'visible' : 'none' },
     });
     map.addLayer({
       id: 'corr-line', type: 'line', source: 'corridors',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 3.5 },
+      paint: { 'line-color': ['get', 'color'], 'line-width': 4, 'line-opacity': 1 },
       layout: { visibility: showCorr ? 'visible' : 'none' },
     });
+    paintCorridorEmphasis(map, activeCorridorRef.current);
+
+    map.on('click', 'corr-fill', (e) => {
+      const f = e.features?.[0];
+      const id = typeof f?.properties?.id === 'string' ? f.properties.id : null;
+      if (id === null) return;
+      const z = CORRIDORS.find((c) => c.id === id);
+      if (z === undefined) return;
+      setActiveCorridorId(id);
+      setTab('corredores');
+      map.fitBounds(zoneBounds(z), { padding: 56, maxZoom: 12.5, duration: 700 });
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({ closeButton: true, offset: 12, className: 'apiej-corr-popup' })
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `<div style="font:700 12px/1.3 system-ui,sans-serif;color:#0E1A3D">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${z.color};margin-right:6px;vertical-align:middle"></span>
+            ${z.name}
+            <div style="margin-top:4px;font-weight:600;font-size:10px;color:#64748b">${z.short} · Corredor industrial APIEJ</div>
+          </div>`,
+        )
+        .addTo(map);
+    });
+    map.on('mouseenter', 'corr-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'corr-fill', () => { map.getCanvas().style.cursor = ''; });
   }
 
   function clearMarkers(): void {
@@ -191,22 +262,43 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   function renderLabels(map: maplibregl.Map): void {
     labelMarkers.current.forEach((m) => m.remove());
     labelMarkers.current = [];
-    const pill = (text: string, at: [number, number], dim: boolean): void => {
-      const el = document.createElement('div');
-      el.textContent = text;
-      el.style.background = '#fff';
+    CORRIDORS.forEach((z) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.textContent = z.short;
+      el.style.background = z.color;
       el.style.borderRadius = '9999px';
-      el.style.padding = dim ? '1px 7px' : '2px 8px';
-      el.style.fontSize = dim ? '9px' : '10px';
-      el.style.fontWeight = dim ? '600' : '800';
-      el.style.color = dim ? '#475569' : '#0F172A';
-      el.style.boxShadow = '0 1px 4px rgba(11,25,44,.25)';
+      el.style.padding = '3px 10px';
+      el.style.fontSize = '10px';
+      el.style.fontWeight = '800';
+      el.style.color = '#fff';
+      el.style.border = '2px solid rgba(255,255,255,0.9)';
+      el.style.boxShadow = '0 2px 8px rgba(11,25,44,.35)';
+      el.style.whiteSpace = 'nowrap';
+      el.style.cursor = 'pointer';
+      el.style.display = showCorr ? 'block' : 'none';
+      el.title = z.name;
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        setActiveCorridorId(z.id);
+        setTab('corredores');
+        map.fitBounds(zoneBounds(z), { padding: 56, maxZoom: 12.5, duration: 700 });
+      });
+      labelMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(corridorCenter(z)).addTo(map));
+    });
+    LOCALITY_PILLS.forEach((l) => {
+      const el = document.createElement('div');
+      el.textContent = l.name;
+      el.style.background = 'rgba(15,23,42,0.72)';
+      el.style.borderRadius = '9999px';
+      el.style.padding = '1px 7px';
+      el.style.fontSize = '9px';
+      el.style.fontWeight = '600';
+      el.style.color = '#fff';
       el.style.whiteSpace = 'nowrap';
       el.style.display = showCorr ? 'block' : 'none';
-      labelMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map));
-    };
-    CORRIDORS.forEach((z) => pill(z.short, corridorCenter(z), false));
-    LOCALITY_PILLS.forEach((l) => pill(l.name, l.at, true));
+      labelMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(l.at).addTo(map));
+    });
   }
 
   const stageRef = useRef(0); // index into MAP_STAGES (mapa mode only)
@@ -326,6 +418,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       const vis = showCorr ? 'visible' : 'none';
       map.setLayoutProperty('corr-fill', 'visibility', vis);
       map.setLayoutProperty('corr-line', 'visibility', vis);
+      if (map.getLayer('corr-glow') !== undefined) map.setLayoutProperty('corr-glow', 'visibility', vis);
     }
     labelMarkers.current.forEach((m) => {
       const el = m.getElement();
@@ -340,6 +433,12 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, showCorr, selectedId]);
+
+  useEffect(() => {
+    const map = mapObj.current;
+    if (map === null || map.getLayer('corr-fill') === undefined) return;
+    paintCorridorEmphasis(map, hoverCorridorId ?? activeCorridorId);
+  }, [activeCorridorId, hoverCorridorId, tileState]);
 
   function toggleFullscreen(): void {
     const host = wrapRef.current;
@@ -362,7 +461,15 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   }
 
   function focusZone(z: CorridorDef): void {
-    mapObj.current?.fitBounds(zoneBounds(z), { padding: 50, maxZoom: 13 });
+    setActiveCorridorId(z.id);
+    mapObj.current?.fitBounds(zoneBounds(z), { padding: 56, maxZoom: 12.5, duration: 700 });
+  }
+
+  function clearCorridorSelection(): void {
+    setActiveCorridorId(null);
+    setHoverCorridorId(null);
+    popupRef.current?.remove();
+    popupRef.current = null;
   }
 
   function clearFilters(): void {
@@ -575,15 +682,37 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 </div>
               </div>
             </div>
-            {/* Footer bar */}
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
+            {/* Corridor color legend */}
+            {showCorr && (
+              <div className="mt-3 flex flex-wrap gap-1.5 px-1">
+                {CORRIDORS.map((z) => (
+                  <button
+                    key={z.id}
+                    type="button"
+                    onClick={() => focusZone(z)}
+                    onMouseEnter={() => setHoverCorridorId(z.id)}
+                    onMouseLeave={() => setHoverCorridorId(null)}
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold transition ${
+                      activeCorridorId === z.id
+                        ? 'ring-2 ring-[#0E1A3D] ring-offset-1'
+                        : 'opacity-90 hover:opacity-100'
+                    }`}
+                    style={{ background: `${z.color}22`, color: z.color }}
+                    title={z.name}
+                  >
+                    <i className="h-2 w-2 rounded-full" style={{ background: z.color }} />
+                    {z.short}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
               <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span>Propuesta visual · Zonas ilustrativas</span>
+                <span>Corredores APIEJ · clic para resaltar</span>
                 <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Verificado</span>
                 <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#00a2ff]" /> En revisión</span>
-                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-slate-300" /> Borrador</span>
               </span>
-              <span className="font-medium">© OpenStreetMap contributors | Referencia de corredores: APIEJ | {filtered.length} pines · {matchedByFilters.length} coincidencias</span>
+              <span className="font-medium">{filtered.length} pines · {matchedByFilters.length} coincidencias</span>
             </div>
             {tileState === 'error' && (
               <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
@@ -632,29 +761,49 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
 
             {tab === 'corredores' && (
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">Corredores industriales</h3>
-                <p className="mb-3 text-xs font-medium text-slate-500">Selecciona una zona para explorar.</p>
-                <ul className="space-y-1.5">
-                  {CORRIDORS.map((z) => (
-                    <li
-                      key={z.id}
-                      className="flex items-center gap-2.5 rounded-2xl border border-white/60 bg-[#EBF0F5] p-2.5 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="text-lg font-extrabold text-slate-900">Corredores industriales</h3>
+                  {activeCorridorId !== null && (
+                    <button
+                      type="button"
+                      onClick={clearCorridorSelection}
+                      className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-300"
                     >
-                      <i className="h-3.5 w-3.5 shrink-0 rounded-md" style={{ background: z.color }} />
-                      <span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-800">{z.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => focusZone(z)}
-                        title={`Enfocar ${z.name} en el mapa`}
-                        className="rounded-lg px-1.5 py-0.5 text-sm transition hover:scale-110"
-                      >
-                        👁
-                      </button>
-                    </li>
-                  ))}
+                      Ver todos
+                    </button>
+                  )}
+                </div>
+                <p className="mb-3 text-xs font-medium text-slate-500">Clic para resaltar en el mapa. Hover = preview.</p>
+                <ul className="space-y-1.5">
+                  {CORRIDORS.map((z) => {
+                    const active = activeCorridorId === z.id;
+                    return (
+                      <li key={z.id}>
+                        <button
+                          type="button"
+                          onClick={() => focusZone(z)}
+                          onMouseEnter={() => setHoverCorridorId(z.id)}
+                          onMouseLeave={() => setHoverCorridorId(null)}
+                          className={`flex w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition ${
+                            active
+                              ? 'border-transparent shadow-md ring-2 ring-offset-1'
+                              : 'border-white/60 bg-[#EBF0F5] shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] hover:brightness-[0.98]'
+                          }`}
+                          style={active ? { background: `${z.color}18`, boxShadow: `0 0 0 2px ${z.color}` } : undefined}
+                        >
+                          <i className="h-3.5 w-3.5 shrink-0 rounded-md shadow-sm" style={{ background: z.color }} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-bold text-slate-800">{z.name}</span>
+                            <span className="block text-[10px] font-semibold" style={{ color: z.color }}>{z.short}</span>
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500">👁</span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
                 <p className="mt-3 flex items-center gap-2 rounded-2xl bg-slate-200/60 p-3 text-xs font-semibold text-slate-600">
-                  📍 Selecciona un parque en el mapa para abrir su ficha.
+                  También puedes hacer clic sobre un corredor en el mapa.
                 </p>
               </div>
             )}
