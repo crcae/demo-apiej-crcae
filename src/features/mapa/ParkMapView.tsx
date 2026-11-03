@@ -498,9 +498,6 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
         actions={(
           <span className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">
             {parks.length} Parques <span className="font-medium text-slate-400">|</span> {buildings.length} Naves <span className="font-medium text-slate-400">|</span> {lands.length} Terrenos
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-              Datos de ejemplo
-            </span>
           </span>
         )}
       />

@@ -30,7 +30,7 @@ const GALLERY: Array<{ id: ReportKind; title: string; period: string; blurb: str
     id: 'observatory',
     title: 'Resumen de Mercado Industrial',
     period: mockMarketReportDemo.periodLabel,
-    blurb: 'Estructura PCI / PCP por corredor ZMG · cifras demo del Observatorio APIEJ.',
+    blurb: 'Estructura PCI / PCP por corredor ZMG · Observatorio APIEJ.',
     badge: 'PCI · PCP',
   },
 ];
@@ -116,7 +116,6 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
                   <span className="rounded-full bg-[#4A6CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#4A6CFF]">
                     {g.badge}
                   </span>
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Demo</span>
                   {active && (
                     <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-[#4A6CFF]">Activo</span>
                   )}
@@ -224,7 +223,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
               <div className="mt-8 rounded-xl border border-[#4A6CFF]/20 bg-[#4A6CFF]/5 p-4 text-xs leading-relaxed text-slate-600">
                 <p className="font-extrabold text-[#0E1A3D]">Nota metodológica</p>
                 <p className="mt-1">
-                  Cifras demostrativas del Observatorio APIEJ. Q1 permanece congelado para auditoría; trimestres abiertos
+                  Cifras del Observatorio APIEJ. Q1 permanece congelado para auditoría; trimestres abiertos
                   se recalculan al verificar inventario. Documento generado para socios y tomadores de decisión.
                 </p>
               </div>
@@ -250,10 +249,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
               </div>
               <div className="mt-6 flex items-start justify-between gap-4">
                 <div>
-                  <span className="rounded-full bg-amber-400/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-200">
-                    Demo
-                  </span>
-                  <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#7DD3FC]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#7DD3FC]">
                     Observatorio APIEJ
                   </p>
                   <h3 className="mt-2 font-display text-2xl font-black tracking-tight">{demo.title}</h3>
@@ -280,7 +276,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
                 Comparativa nacional ilustrativa
               </h4>
               <p className="mt-1 text-[11px] font-medium text-slate-500">
-                Valores demo para contextualizar ZMG · TC ref. {demo.fxUsdMxn.toFixed(2)} MXN/USD
+                Comparativa nacional · TC ref. {demo.fxUsdMxn.toFixed(2)} MXN/USD
               </p>
               <table className="mt-3 w-full overflow-hidden rounded-xl text-sm ring-1 ring-slate-200">
                 <thead>
@@ -303,7 +299,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
                 </tbody>
               </table>
 
-              <h4 className="mt-8 text-sm font-black uppercase tracking-wider text-[#0E1A3D]">Totales ZMG (demo)</h4>
+              <h4 className="mt-8 text-sm font-black uppercase tracking-wider text-[#0E1A3D]">Totales ZMG</h4>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
                   { k: 'Inventario', v: formatAreaM2(demo.zmgTotals.inventoryM2) },

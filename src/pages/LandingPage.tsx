@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BarChart3, Building2, ChevronLeft, ChevronRight, Map, Warehouse } from 'lucide-react';
+import {
+  BarChart3, Building2, ChevronLeft, ChevronRight, LayoutDashboard, Map, Search, Warehouse,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { RoadNetworkBg } from '../components/RoadNetworkBg.js';
+import { CORRIDORS } from '../mock/corridors.mock.js';
 import { mockQ1Kpis } from '../mock/market.mock.js';
 import { formatAreaM2, formatPct } from '../utils/formatters.js';
 
@@ -27,6 +30,12 @@ const STEPS: ExploreStep[] = [
   { n: '01', icon: Warehouse, accent: '#FF7A00', title: 'Ver propiedades', desc: 'Catálogo público en renta o venta', kind: 'public' },
   { n: '02', icon: Map, accent: '#10B981', title: 'Mapa industrial', desc: 'Parques y corredores de Jalisco', kind: 'system', view: 'mapa' },
   { n: '03', icon: BarChart3, accent: '#4A6CFF', title: 'Indicadores y reportes', desc: 'Análisis trimestral (requiere sesión)', kind: 'system', view: 'reportes' },
+];
+
+const HOW: Array<{ n: string; icon: typeof Search; accent: string; title: string; desc: string }> = [
+  { n: '01', icon: Search, accent: '#FF7A00', title: 'Consultar propiedades', desc: 'Explora el catálogo público de naves y terrenos sin crear cuenta.' },
+  { n: '02', icon: BarChart3, accent: '#10B981', title: 'Monitorear indicadores', desc: 'Sigue inventario, vacancia, absorción y rentas por corredor.' },
+  { n: '03', icon: LayoutDashboard, accent: '#4A6CFF', title: 'Operar con sesión', desc: 'Captura, valida y reporta con tu organización en la plataforma.' },
 ];
 
 const DEVS = [
@@ -90,10 +99,9 @@ export function LandingPage(): React.JSX.Element {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-clip bg-transparent text-slate-950">
+    <div className="relative min-h-screen w-full overflow-x-clip bg-[#0B1228] text-slate-950">
       <RoadNetworkBg />
 
-      {/* Header — solid navy, public CTAs only */}
       <header className="sticky top-0 z-50 text-white shadow-lg shadow-black/20">
         <div className="border-b border-white/10 bg-[#0E1A3D]">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5 md:px-8">
@@ -106,6 +114,7 @@ export function LandingPage(): React.JSX.Element {
             <nav className="hidden items-center gap-7 text-xs font-bold text-white/80 md:flex">
               <button type="button" onClick={() => navigate('/propiedades')} className="transition hover:text-[#4A6CFF]">Ver propiedades</button>
               <a href="#cifras" className="transition hover:text-[#4A6CFF]">Indicadores</a>
+              <a href="#cobertura" className="transition hover:text-[#4A6CFF]">Cobertura</a>
               <a href="#institucional" className="transition hover:text-[#4A6CFF]">Conoce APIEJ</a>
             </nav>
             <div className="flex items-center gap-2">
@@ -119,7 +128,7 @@ export function LandingPage(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => go(navigate)}
-                className="rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#4A6CFF]/25 transition hover:-translate-y-0.5 hover:bg-[#3b5aef]"
+                className="rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#4A6CFF]/20 transition hover:-translate-y-0.5 hover:bg-[#3b5aef]"
               >
                 Iniciar sesión ↗
               </button>
@@ -133,7 +142,6 @@ export function LandingPage(): React.JSX.Element {
         </div>
       </header>
 
-      {/* Hero — full-bleed composition */}
       <section className="relative z-10 min-h-[min(92vh,820px)] w-full overflow-hidden">
         <img
           src={heroSrc}
@@ -141,17 +149,17 @@ export function LandingPage(): React.JSX.Element {
           onError={() => { if (heroSrc !== HERO_FALLBACK) setHeroSrc(HERO_FALLBACK); }}
           className="animate-kenburns absolute inset-0 h-full w-full object-cover object-center"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0E1A3D]/96 via-[#0E1A3D]/72 to-[#0E1A3D]/30" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1228] via-transparent to-[#0E1A3D]/45" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0E1A3D] via-[#0E1A3D]/88 to-[#0E1A3D]/35" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1228] via-transparent to-[#0E1A3D]/50" />
         {!reduce && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="animate-hero-sheen absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+            <div className="animate-hero-sheen absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/8 to-transparent" />
           </div>
         )}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex h-1" aria-hidden="true">
-          <span className="flex-1 bg-[#FF7A00]/80" />
-          <span className="flex-1 bg-[#10B981]/80" />
-          <span className="flex-1 bg-[#4A6CFF]/80" />
+          <span className="flex-1 bg-[#FF7A00]/70" />
+          <span className="flex-1 bg-[#10B981]/70" />
+          <span className="flex-1 bg-[#4A6CFF]/70" />
         </div>
 
         <div className="relative z-20 mx-auto flex min-h-[min(92vh,820px)] w-full max-w-6xl flex-col justify-center px-5 py-16 md:px-8">
@@ -163,11 +171,11 @@ export function LandingPage(): React.JSX.Element {
           >
             <div className="flex items-center gap-2.5">
               <span className="flex gap-1.5" aria-hidden="true">
-                <i className="h-1.5 w-7 rounded-full bg-[#FF7A00] shadow-[0_0_14px_rgba(255,122,0,0.9)]" />
-                <i className="h-1.5 w-7 rounded-full bg-[#10B981] shadow-[0_0_14px_rgba(16,185,129,0.9)]" />
-                <i className="h-1.5 w-7 rounded-full bg-[#4A6CFF] shadow-[0_0_14px_rgba(74,108,255,0.9)]" />
+                <i className="h-1.5 w-7 rounded-full bg-[#FF7A00]" />
+                <i className="h-1.5 w-7 rounded-full bg-[#10B981]" />
+                <i className="h-1.5 w-7 rounded-full bg-[#4A6CFF]" />
               </span>
-              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/85">
                 APIEJ · Observatorio Industrial
               </span>
             </div>
@@ -177,7 +185,7 @@ export function LandingPage(): React.JSX.Element {
             <p className="mt-3 text-2xl font-extrabold tracking-tight text-white md:text-3xl">
               El pulso industrial de Jalisco.
             </p>
-            <p className="mt-4 max-w-lg text-sm font-medium leading-relaxed text-white/75 md:text-base">
+            <p className="mt-4 max-w-lg text-sm font-medium leading-relaxed text-white/80 md:text-base">
               Inventario, disponibilidad y tendencias del mercado — una sola fuente de verdad para socios y tomadores de decisión.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -186,7 +194,7 @@ export function LandingPage(): React.JSX.Element {
                 whileHover={reduce ? undefined : { scale: 1.03 }}
                 whileTap={reduce ? undefined : { scale: 0.98 }}
                 onClick={() => navigate('/propiedades')}
-                className="rounded-2xl bg-[#FF7A00] px-8 py-3.5 text-sm font-black text-white shadow-2xl shadow-[#FF7A00]/35 transition hover:bg-[#e86e00]"
+                className="rounded-2xl bg-[#FF7A00] px-8 py-3.5 text-sm font-black text-white shadow-xl shadow-[#FF7A00]/25 transition hover:bg-[#e86e00]"
               >
                 Ver propiedades ➔
               </motion.button>
@@ -200,17 +208,17 @@ export function LandingPage(): React.JSX.Element {
                 Ver indicadores
               </button>
             </div>
-            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#0E1A3D]/55 px-3.5 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur">
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#0E1A3D]/70 px-3.5 py-1.5 text-[11px] font-semibold text-white/95 backdrop-blur">
               <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#10B981]" />
-              Acceso público · Sin registro · Demo 2026
+              Acceso público · Sin registro
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Content — translucent so roads stay faintly visible */}
-      <div className="relative z-10 bg-[#F8FAFC]/88 backdrop-blur-[2px]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0B1228]/40 to-transparent" />
+      {/* Opaque content surface — titles stay readable */}
+      <div className="relative z-10 bg-[#F8FAFC]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0B1228]/25 to-transparent" />
         <div className="relative mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
           <section id="cifras" className="scroll-mt-28">
             <motion.div {...fadeUp} className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -220,14 +228,14 @@ export function LandingPage(): React.JSX.Element {
               </div>
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
                 <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                T1 · Ilustrativo · LIVE
+                T1 2026 · En vivo
               </span>
             </motion.div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {[
-                { value: formatAreaM2(inv), label: 'Inventario industrial', color: '#FF7A00', glow: 'rgba(255,122,0,0.18)' },
-                { value: formatPct(vac), label: 'Tasa de disponibilidad', color: '#10B981', glow: 'rgba(16,185,129,0.18)' },
-                { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', color: '#4A6CFF', glow: 'rgba(74,108,255,0.18)' },
+                { value: formatAreaM2(inv), label: 'Inventario industrial', color: '#FF7A00' },
+                { value: formatPct(vac), label: 'Tasa de disponibilidad', color: '#10B981' },
+                { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', color: '#4A6CFF' },
               ].map((s, i) => (
                 <motion.div
                   key={s.label}
@@ -235,17 +243,12 @@ export function LandingPage(): React.JSX.Element {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
-                  whileHover={reduce ? undefined : { y: -6 }}
-                  className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-6 shadow-lg backdrop-blur-sm"
-                  style={{ boxShadow: `0 12px 40px -16px ${s.glow}, 0 1px 0 rgba(255,255,255,0.8) inset` }}
+                  whileHover={reduce ? undefined : { y: -4 }}
+                  className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
                 >
                   <div className="absolute inset-x-0 top-0 h-1" style={{ background: s.color }} />
-                  <div
-                    className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
-                    style={{ background: s.glow }}
-                  />
-                  <p className="relative font-display text-3xl font-black tabular-nums text-[#0E1A3D] md:text-4xl">{s.value}</p>
-                  <p className="relative mt-2 text-xs font-bold text-slate-500">{s.label}</p>
+                  <p className="font-display text-3xl font-black tabular-nums text-[#0E1A3D] md:text-4xl">{s.value}</p>
+                  <p className="mt-2 text-xs font-bold text-slate-500">{s.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -270,18 +273,14 @@ export function LandingPage(): React.JSX.Element {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.5 }}
-                  whileHover={reduce ? undefined : { y: -6 }}
-                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-6 text-left shadow-lg backdrop-blur-sm transition"
+                  whileHover={reduce ? undefined : { y: -4 }}
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 text-left shadow-sm transition hover:shadow-md"
                 >
                   <div className="absolute inset-x-0 bottom-0 h-1" style={{ background: c.accent }} />
-                  <div
-                    className="pointer-events-none absolute -left-8 top-0 h-28 w-28 rounded-full opacity-60 blur-2xl transition group-hover:opacity-100"
-                    style={{ background: `${c.accent}33` }}
-                  />
-                  <span className="absolute right-5 top-5 text-2xl font-black text-slate-200/90">{c.n}</span>
+                  <span className="absolute right-5 top-5 text-2xl font-black text-slate-100">{c.n}</span>
                   <span
-                    className="relative flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-110"
-                    style={{ background: `${c.accent}18`, color: c.accent }}
+                    className="relative flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-105"
+                    style={{ background: `${c.accent}14`, color: c.accent }}
                   >
                     <c.icon size={20} />
                   </span>
@@ -296,6 +295,66 @@ export function LandingPage(): React.JSX.Element {
             </div>
           </section>
 
+          <section id="cobertura" className="mt-16 scroll-mt-28">
+            <motion.div {...fadeUp}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A6CFF]">Cobertura ZMG</p>
+              <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">Corredores industriales monitoreados</h2>
+              <p className="mt-1 max-w-2xl text-sm font-medium text-slate-500">
+                El Observatorio APIEJ cubre los principales corredores de la Zona Metropolitana de Guadalajara para inventario, disponibilidad y dinámica de mercado.
+              </p>
+            </motion.div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {CORRIDORS.map((c, i) => (
+                <motion.div
+                  key={c.id}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-sm"
+                >
+                  <i className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-extrabold text-[#0E1A3D]">{c.name}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{c.short}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          <section id="como-funciona" className="mt-16 scroll-mt-28">
+            <motion.div {...fadeUp}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#10B981]">Cómo funciona</p>
+              <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">De la consulta a la operación</h2>
+              <p className="mt-1 text-sm font-medium text-slate-500">Tres pasos para aprovechar el Observatorio APIEJ.</p>
+            </motion.div>
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+              {HOW.map((h, i) => (
+                <motion.div
+                  key={h.n}
+                  initial={reduce ? false : { opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className="relative rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <span
+                      className="flex h-11 w-11 items-center justify-center rounded-xl"
+                      style={{ background: `${h.accent}14`, color: h.accent }}
+                    >
+                      <h.icon size={20} />
+                    </span>
+                    <span className="font-display text-2xl font-black text-slate-100">{h.n}</span>
+                  </div>
+                  <p className="text-lg font-extrabold text-[#0E1A3D]">{h.title}</p>
+                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-slate-500">{h.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
           <section className="mt-16">
             <motion.div {...fadeUp} className="flex items-end justify-between gap-3">
               <div>
@@ -303,10 +362,10 @@ export function LandingPage(): React.JSX.Element {
                 <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">Nuestros colaboradores</h2>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => nudge(-1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-slate-600 hover:bg-white">
+                <button type="button" onClick={() => nudge(-1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
                   <ChevronLeft size={15} />
                 </button>
-                <button type="button" onClick={() => nudge(1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-slate-600 hover:bg-white">
+                <button type="button" onClick={() => nudge(1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
                   <ChevronRight size={15} />
                 </button>
               </div>
@@ -324,8 +383,8 @@ export function LandingPage(): React.JSX.Element {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.06 }}
-                  whileHover={reduce ? undefined : { y: -4 }}
-                  className="w-52 shrink-0 rounded-2xl border border-white/80 bg-white/90 px-6 py-8 text-center shadow-md backdrop-blur-sm transition hover:border-[#4A6CFF]/35 hover:shadow-lg md:w-auto"
+                  whileHover={reduce ? undefined : { y: -3 }}
+                  className="w-52 shrink-0 rounded-2xl border border-slate-200/80 bg-white px-6 py-8 text-center shadow-sm transition hover:border-[#4A6CFF]/30 hover:shadow-md md:w-auto"
                 >
                   <div className="mx-auto mb-3 flex h-1 w-10 gap-0.5 overflow-hidden rounded-full">
                     <span className="flex-1 bg-[#FF7A00]" />
@@ -344,9 +403,8 @@ export function LandingPage(): React.JSX.Element {
               {...fadeUp}
               className="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E1A3D] via-[#152552] to-[#1a2d5c] p-8 text-white shadow-xl ring-1 ring-white/10 md:grid-cols-12 md:p-12"
             >
-              <div className="pointer-events-none absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#4A6CFF]/25 blur-3xl" />
-              <div className="pointer-events-none absolute bottom-0 left-10 h-40 w-40 rounded-full bg-[#FF7A00]/20 blur-3xl" />
-              <div className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#10B981]/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-[#4A6CFF]/15 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-0 left-10 h-32 w-32 rounded-full bg-[#FF7A00]/12 blur-3xl" />
               <div className="relative rounded-2xl border border-white/15 bg-white/10 p-8 text-center backdrop-blur md:col-span-5">
                 <div className="mb-4 flex justify-center gap-1.5" aria-hidden="true">
                   <i className="h-2 w-2 rounded-full bg-[#FF7A00]" />
@@ -380,10 +438,10 @@ export function LandingPage(): React.JSX.Element {
           </section>
         </div>
 
-        <footer className="border-t border-slate-200/80 bg-white/80 backdrop-blur-sm">
+        <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 text-xs text-slate-400 md:px-8">
             <span className="font-bold text-[#0E1A3D]/70">APIEJ · Observatorio Industrial</span>
-            <span>Demo presentación · 2026</span>
+            <span>2026</span>
           </div>
         </footer>
       </div>

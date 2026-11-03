@@ -1,13 +1,13 @@
-/** Fixed road-network backdrop — dynamic but low-contrast so it never steals focus. */
+/** Fixed road-network backdrop — soft motion that stays behind content. */
 export function RoadNetworkBg(): React.JSX.Element {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0 bg-[#0B1228]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_5%,rgba(74,108,255,0.28),transparent_48%),radial-gradient(ellipse_at_85%_25%,rgba(255,122,0,0.22),transparent_42%),radial-gradient(ellipse_at_55%_95%,rgba(16,185,129,0.18),transparent_45%),radial-gradient(ellipse_at_40%_50%,rgba(0,162,255,0.08),transparent_55%)]" />
-      <div className="absolute inset-0 animate-road-wash opacity-70" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_5%,rgba(74,108,255,0.12),transparent_50%),radial-gradient(ellipse_at_85%_25%,rgba(255,122,0,0.09),transparent_45%),radial-gradient(ellipse_at_55%_95%,rgba(16,185,129,0.08),transparent_48%),radial-gradient(ellipse_at_40%_50%,rgba(0,162,255,0.04),transparent_55%)]" />
+      <div className="absolute inset-0 animate-road-wash opacity-35" />
 
       <svg
-        className="road-network absolute inset-0 h-full w-full opacity-[0.17]"
+        className="road-network absolute inset-0 h-full w-full opacity-[0.11]"
         viewBox="0 0 1200 800"
         preserveAspectRatio="xMidYMid slice"
       >
@@ -19,10 +19,10 @@ export function RoadNetworkBg(): React.JSX.Element {
             <stop offset="100%" stopColor="#FF7A00" />
           </linearGradient>
           <filter id="roadSoft" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="1.1" />
+            <feGaussianBlur stdDeviation="1.4" />
           </filter>
           <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="2.2" result="b" />
+            <feGaussianBlur stdDeviation="1.6" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
@@ -46,42 +46,34 @@ export function RoadNetworkBg(): React.JSX.Element {
         </g>
 
         <g filter="url(#dotGlow)">
-          <circle r="3.5" fill="#FF7A00" className="road-pulse-dot">
-            <animateMotion dur="7.5s" repeatCount="indefinite" path="M40 120 C200 80, 320 200, 480 160 S780 40, 1160 100" />
-          </circle>
-          <circle r="3" fill="#4A6CFF" className="road-pulse-dot">
-            <animateMotion dur="9s" repeatCount="indefinite" begin="0.8s" path="M20 320 C180 280, 340 400, 520 360 S820 280, 1180 340" />
-          </circle>
-          <circle r="3.2" fill="#10B981" className="road-pulse-dot">
-            <animateMotion dur="8s" repeatCount="indefinite" begin="0.4s" path="M200 40 C240 180, 260 360, 300 520 S340 700, 380 780" />
-          </circle>
-          <circle r="2.8" fill="#00a2ff" className="road-pulse-dot">
-            <animateMotion dur="10s" repeatCount="indefinite" begin="1.5s" path="M600 20 C580 160, 640 300, 620 460 S600 640, 660 780" />
-          </circle>
           <circle r="3" fill="#FF7A00" className="road-pulse-dot">
-            <animateMotion dur="7s" repeatCount="indefinite" begin="0.2s" path="M100 200 C300 240, 500 180, 700 220 S1000 260, 1180 200" />
+            <animateMotion dur="8.5s" repeatCount="indefinite" path="M40 120 C200 80, 320 200, 480 160 S780 40, 1160 100" />
           </circle>
-          <circle r="2.6" fill="#10B981" className="road-pulse-dot">
-            <animateMotion dur="8.5s" repeatCount="indefinite" begin="2.1s" path="M0 450 C160 420, 280 500, 440 470 S760 410, 1200 480" />
+          <circle r="2.6" fill="#4A6CFF" className="road-pulse-dot">
+            <animateMotion dur="10s" repeatCount="indefinite" begin="0.8s" path="M20 320 C180 280, 340 400, 520 360 S820 280, 1180 340" />
           </circle>
-          <circle r="2.9" fill="#4A6CFF" className="road-pulse-dot">
-            <animateMotion dur="9.5s" repeatCount="indefinite" begin="1.1s" path="M420 0 C400 140, 460 280, 440 420 S420 620, 500 800" />
+          <circle r="2.8" fill="#10B981" className="road-pulse-dot">
+            <animateMotion dur="9s" repeatCount="indefinite" begin="0.4s" path="M200 40 C240 180, 260 360, 300 520 S340 700, 380 780" />
+          </circle>
+          <circle r="2.4" fill="#00a2ff" className="road-pulse-dot">
+            <animateMotion dur="11s" repeatCount="indefinite" begin="1.5s" path="M600 20 C580 160, 640 300, 620 460 S600 640, 660 780" />
           </circle>
           <circle r="2.5" fill="#FF7A00" className="road-pulse-dot">
-            <animateMotion dur="11s" repeatCount="indefinite" begin="0.6s" path="M800 0 C820 160, 760 300, 790 460 S830 640, 780 800" />
+            <animateMotion dur="8s" repeatCount="indefinite" begin="0.2s" path="M100 200 C300 240, 500 180, 700 220 S1000 260, 1180 200" />
+          </circle>
+          <circle r="2.2" fill="#10B981" className="road-pulse-dot">
+            <animateMotion dur="9.5s" repeatCount="indefinite" begin="2.1s" path="M0 450 C160 420, 280 500, 440 470 S760 410, 1200 480" />
           </circle>
         </g>
 
         <g fill="#4A6CFF">
-          <circle className="road-node road-n1" cx="480" cy="160" r="4" />
-          <circle className="road-node road-n2" cx="520" cy="360" r="4" />
-          <circle className="road-node road-n3" cx="580" cy="560" r="3.5" />
-          <circle className="road-node road-n4" cx="300" cy="520" r="3.5" />
-          <circle className="road-node road-n5" cx="620" cy="460" r="3.5" />
-          <circle className="road-node road-n6" cx="960" cy="500" r="3.5" />
-          <circle className="road-node road-n7" cx="700" cy="220" r="3" />
-          <circle className="road-node road-n8" cx="440" cy="470" r="3" />
-          <circle className="road-node road-n9" cx="790" cy="460" r="3" />
+          <circle className="road-node road-n1" cx="480" cy="160" r="3.5" />
+          <circle className="road-node road-n2" cx="520" cy="360" r="3.5" />
+          <circle className="road-node road-n3" cx="580" cy="560" r="3" />
+          <circle className="road-node road-n4" cx="300" cy="520" r="3" />
+          <circle className="road-node road-n5" cx="620" cy="460" r="3" />
+          <circle className="road-node road-n6" cx="960" cy="500" r="3" />
+          <circle className="road-node road-n7" cx="700" cy="220" r="2.5" />
         </g>
       </svg>
     </div>

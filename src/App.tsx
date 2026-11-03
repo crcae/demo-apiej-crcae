@@ -3,8 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { LandingPage } from './pages/LandingPage.js';
 import { PublicPropertiesPage } from './pages/PublicPropertiesPage.js';
 import { AppHeader } from './components/AppHeader.js';
-import type { TourStep } from './components/TourDock.js';
-import { TourDock, type TourAction } from './components/TourDock.js';
+import { TourDock, type TourAction, type TourStep } from './components/TourDock.js';
 import { AuditView } from './features/auditoria/AuditView.js';
 import { CaptureView } from './features/captura/CaptureView.js';
 import { ReportModal } from './features/reportes/ReportModal.js';
@@ -12,6 +11,9 @@ import { ReportsView } from './features/reportes/ReportsView.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
 import { InventoryView } from './features/inventario/InventoryView.js';
+import {
+  TOUR_STEPS, TOUR_TOTAL, type TourActionKey, type TourStepId,
+} from './features/tour/tourConfig.js';
 
 const ParkMapView = lazy(() =>
   import('./features/mapa/ParkMapView.js').then((m) => ({ default: m.ParkMapView })),
@@ -118,64 +120,6 @@ function PlatformApp(): React.JSX.Element {
     }
   }
 
-  function applyTourStep(s: TourStep): void {
-    if (s === 1) {
-      switchPersona('STAFF');
-      setView('dashboard');
-      setPeriodId('p-2026-q1');
-      flash('Paso 1: Q1 congelado (inmutable). Cambia USD/MXN arriba: el FX Banxico convierte al instante.');
-    } else if (s === 2) {
-      switchPersona('ALPHA');
-      setView('dashboard');
-      setPeriodId('p-2026-q2');
-      flash('Paso 2: eres Dev Alpha — lo de Beta vanish: KPIs, mapa y listas filtrados por backend.');
-    } else if (s === 3) {
-      switchPersona('STAFF');
-      setView('validacion');
-      flash('Paso 3: la nave pendiente brilla en dorado. Revísala y apruébala en 1 clic.');
-    } else if (s === 4) {
-      setView('validacion');
-      flash('Paso 4: pulsa “Aprobar 1ª pendiente” en el dock o “Aprobar & Verificar” en la tarjeta.');
-    } else {
-      setView('mapa');
-      flash('Paso 5: pines con ficha técnica e infraestructura. Exporta el Reporte Ejecutivo Q2.');
-    }
-  }
-
-  function tourNext(): void {
-    if (tourStep === null) return;
-    if (tourStep === 5) {
-      setTourStep(null);
-      flash('Tour finalizado — Q1 intacto, Q2 en vivo. ¡Gracias!');
-      return;
-    }
-    const n = (tourStep + 1) as TourStep;
-    setTourStep(n);
-    applyTourStep(n);
-  }
-
-  function tourPrev(): void {
-    if (tourStep === null || tourStep === 1) return;
-    const p = (tourStep - 1) as TourStep;
-    setTourStep(p);
-    applyTourStep(p);
-  }
-
-  function tourApproveFirst(): void {
-    if (!staff) {
-      flash('El tour necesita rol Staff para aprobar.');
-      return;
-    }
-    const first = inboxItems[0];
-    if (!first) {
-      flash('Sin pendientes: crea una nave en Captura y envíala a validación primero.');
-      return;
-    }
-    decide(first, 'VERIFIED', 'Aprobado en tour guiado');
-    setTourStep(5);
-    flash('✓ Aprobada y Q2 recalculado en vivo — Q1 intacto. Paso 5: mapa y reporte.');
-  }
-
   const inboxItems: ReviewItem[] = useMemo(() => {
     const all: ReviewItem[] = [
       ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): ReviewItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
@@ -190,51 +134,114 @@ function PlatformApp(): React.JSX.Element {
     });
   }, [parks, buildings, lands, staff, actor.orgId]);
 
-  const TOUR_COPY: Record<TourStep, { title: string; text: string; actions: () => TourAction[] }> = {
-    1: {
-      title: 'Visión General Q1',
-      text: 'Q1 2026 está congelado como Snapshot inmutable. Prueba cambiar entre USD y MXN.',
-      actions: () => [{
+  function applyTourStep(s: TourStepId): void {
+    const def = TOUR_STEPS[s];
+    switchPersona(def.persona);
+    setView(def.view);
+    if (def.periodId !== undefined) setPeriodId(def.periodId);
+    flash(def.flash);
+  }
+
+  function startTour(): void {
+    setTourStep(1);
+    applyTourStep(1);
+  }
+
+  function finishTour(): void {
+    setTourStep(null);
+    switchPersona('STAFF');
+    setView('dashboard');
+    flash('Tour finalizado. Puedes reiniciarlo desde el Dashboard cuando quieras.');
+  }
+
+  function tourNext(): void {
+    if (tourStep === null) return;
+    if (tourStep === TOUR_TOTAL) {
+      finishTour();
+      return;
+    }
+    const n = (tourStep + 1) as TourStepId;
+    setTourStep(n);
+    applyTourStep(n);
+  }
+
+  function tourPrev(): void {
+    if (tourStep === null || tourStep === 1) return;
+    const p = (tourStep - 1) as TourStepId;
+    setTourStep(p);
+    applyTourStep(p);
+  }
+
+  function tourApproveFirst(): void {
+    switchPersona('STAFF');
+    const pending: ReviewItem[] = [
+      ...parks.filter((p) => p.status === 'PENDING_VALIDATION').map((p): ReviewItem => ({ kind: 'PARK', id: p.id, title: p.name, status: p.status })),
+      ...buildings.filter((b) => b.status === 'PENDING_VALIDATION').map((b): ReviewItem => ({ kind: 'BUILDING', id: b.id, title: `Nave ${b.code}`, status: b.status })),
+      ...lands.filter((l) => l.status === 'PENDING_VALIDATION').map((l): ReviewItem => ({ kind: 'LAND', id: l.id, title: l.name, status: l.status })),
+    ];
+    const first = pending[0];
+    if (first === undefined) {
+      flash('Sin pendientes: envía una nave desde Captura a validación primero.');
+      return;
+    }
+    decide(first, 'VERIFIED', 'Aprobado en tour guiado');
+    setTourStep(7);
+    applyTourStep(7);
+    flash('✓ Aprobada. Q2 recalculado en vivo — Q1 intacto.');
+  }
+
+  function resolveTourActions(keys: TourActionKey[]): TourAction[] {
+    const map: Record<TourActionKey, TourAction> = {
+      toggleCurrency: {
         label: currency === 'USD' ? 'Cambiar a MXN' : 'Cambiar a USD',
         gold: true,
-        run: () => setCurrency(currency === 'USD' ? 'MXN' : 'USD'),
-      }],
-    },
-    2: {
-      title: 'Aislamiento Multi-Tenant',
-      text: 'Aislamiento total: los datos de Dev Beta desaparecieron del sistema en tiempo real.',
-      actions: () => [{
-        label: 'Probar Dev Beta',
-        gold: true,
         run: () => {
-          switchPersona('BETA');
-          flash('Ahora eres Dev Beta — compara: otros parques, otros números.');
+          setCurrency(currency === 'USD' ? 'MXN' : 'USD');
+          flash(currency === 'USD' ? 'Moneda: MXN' : 'Moneda: USD');
         },
-      }],
-    },
-    3: {
-      title: 'Bandeja de Validación',
-      text: `Como APIEJ Staff, tienes ${inboxItems.length} ${inboxItems.length === 1 ? 'nave pendiente' : 'naves pendientes'} de aprobación. Brilla en dorado.`,
-      actions: () => [],
-    },
-    4: {
-      title: 'Aprobación y Recálculo Q2',
-      text: 'Pulsa «Aprobar 1ª pendiente» y mira cómo la vacancia y la absorción del Q2 se recalculan en vivo.',
-      actions: () => [{
-        label: 'Aprobar 1ª pendiente y recalcular',
+      },
+      showQ2: {
+        label: 'Ver Q2 en vivo',
+        run: () => {
+          setPeriodId('p-2026-q2');
+          flash('Periodo Q2 abierto: los KPIs se recalculan al validar inventario.');
+        },
+      },
+      approveFirst: {
+        label: 'Aprobar 1ª pendiente',
         gold: true,
         run: tourApproveFirst,
-      }],
-    },
-    5: {
-      title: 'Mapa GIS y Reporte PDF',
-      text: 'Explora la geolocalización de parques y genera el reporte ejecutivo oficial.',
-      actions: () => [
-        { label: 'Ir al Mapa GIS', run: () => setView('mapa') },
-        { label: 'Abrir Reportes PDF', gold: true, run: () => setView('reportes') },
-      ],
-    },
-  };
+      },
+      openReports: {
+        label: 'Ir a Reportes',
+        gold: true,
+        run: () => setView('reportes'),
+      },
+      openMap: {
+        label: 'Ir al Mapa',
+        run: () => setView('mapa'),
+      },
+      switchBeta: {
+        label: 'Probar rol Dev Beta',
+        run: () => {
+          switchPersona('BETA');
+          setView('dashboard');
+          flash('Rol Dev Beta: ves solo el inventario de tu organización.');
+        },
+      },
+      newBuilding: {
+        label: 'Nueva nave (wizard)',
+        gold: true,
+        run: () => {
+          setEditing(null);
+          setWizardOpen(true);
+        },
+      },
+    };
+    return keys.map((k) => map[k]);
+  }
+
+  const activeTour = tourStep !== null ? TOUR_STEPS[tourStep as TourStepId] : null;
 
   // Tenant-filtered datasets (backend RLS mirrored in marketService)
   const parksResult = useMemo(() => listParksFor(actor, parks), [actor, parks]);
@@ -413,22 +420,7 @@ function PlatformApp(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6">
-        {tourStep !== null && (
-          <TourDock
-            step={tourStep}
-            total={5}
-            title={TOUR_COPY[tourStep].title}
-            text={TOUR_COPY[tourStep].text}
-            actions={TOUR_COPY[tourStep].actions()}
-            canPrev={tourStep > 1}
-            isLast={tourStep === 5}
-            onPrev={tourPrev}
-            onNext={tourNext}
-            onClose={() => setTourStep(null)}
-          />
-        )}
-
+      <div className={`mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6 ${tourStep !== null ? 'pb-36' : ''}`}>
         <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter relative z-10 min-w-0">
           {accessDenied !== null && (
             <div className="mb-4 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-bold text-red-800 shadow-sm" role="alert">
@@ -452,13 +444,7 @@ function PlatformApp(): React.JSX.Element {
               pendingCount={inboxItems.length}
               onGoValidation={() => setView('validacion')}
               onExport={() => setView('reportes')}
-              onOpenTour={() => {
-                setTourStep(1);
-                switchPersona('STAFF');
-                setView('dashboard');
-                setPeriodId('p-2026-q1');
-                flash('Paso 1: Q1 congelado (inmutable). Prueba cambiar entre USD y MXN.');
-              }}
+              onOpenTour={startTour}
             />
           )}
 
@@ -474,7 +460,7 @@ function PlatformApp(): React.JSX.Element {
               mode="manage"
               onUpdateListing={(id, patch) => {
                 setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
-                flash('Propiedad actualizada en inventario demo.');
+                flash('Propiedad actualizada en inventario.');
               }}
             />
           )}
@@ -502,7 +488,7 @@ function PlatformApp(): React.JSX.Element {
               audit={audit}
               actorOrgId={actor.orgId}
               isStaff={staff}
-              spotlight={tourStep === 3 || tourStep === 4}
+              spotlight={activeTour?.spotlight === true}
               onDecide={(item, to, comment) => decide(item, to, comment)}
             />
           )}
@@ -539,11 +525,30 @@ function PlatformApp(): React.JSX.Element {
         )}
 
         {toast !== null && (
-          <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0E1A3D] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-[#4A6CFF]/40">
+          <div className={`fixed left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0E1A3D] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-[#4A6CFF]/40 ${tourStep !== null ? 'bottom-36' : 'bottom-6'}`}>
             {toast}
           </div>
         )}
       </div>
+
+      {activeTour !== null && tourStep !== null && (
+        <TourDock
+          step={tourStep}
+          total={TOUR_TOTAL}
+          title={activeTour.title}
+          text={
+            tourStep === 5
+              ? `${activeTour.text} Pendientes ahora: ${inboxItems.length}.`
+              : activeTour.text
+          }
+          actions={resolveTourActions(activeTour.actionKeys)}
+          canPrev={tourStep > 1}
+          isLast={tourStep === TOUR_TOTAL}
+          onPrev={tourPrev}
+          onNext={tourNext}
+          onClose={finishTour}
+        />
+      )}
     </div>
   );
 }

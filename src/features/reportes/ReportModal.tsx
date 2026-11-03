@@ -64,7 +64,7 @@ export function ReportModal({ live, frozen, currency, fx, generatedBy, onClose }
               </tbody>
             </table>
             <div className="mt-6 flex items-end justify-between border-t border-slate-200 pt-4 text-[11px] text-slate-500">
-              <p>Generado por {generatedBy} · {new Date().toLocaleString()} · Documento demostrativo</p>
+              <p>Generado por {generatedBy} · {new Date().toLocaleString()} · Observatorio APIEJ</p>
               <p className="font-bold text-[#0B192C]">APIEJ — Una sola fuente de verdad</p>
             </div>
           </div>

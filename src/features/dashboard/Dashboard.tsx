@@ -219,7 +219,7 @@ export function Dashboard({
           <button
             type="button"
             onClick={onOpenTour}
-            title="Inicia el tour guiado de 5 pasos"
+            title="Recorrido guiado por todo el sistema APIEJ"
             className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
           >
             <Presentation size={13} /> Tour guiado

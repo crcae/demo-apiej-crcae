@@ -110,9 +110,6 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
             <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
               Solo lectura
             </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-              Datos de ejemplo
-            </span>
           </>
         )}
       />

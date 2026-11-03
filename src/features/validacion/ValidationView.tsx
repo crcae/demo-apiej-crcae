@@ -284,7 +284,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                     )}
                   </div>
                   <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    ℹ Vista de ejemplo: campos pendientes de cargar.
+                    ℹ Campos pendientes de cargar.
                   </p>
                 </>
               )}

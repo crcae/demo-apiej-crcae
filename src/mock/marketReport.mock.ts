@@ -59,7 +59,7 @@ export interface MarketReportDemo {
 export const mockMarketReportDemo: MarketReportDemo = {
   periodLabel: '2026-Q2',
   title: 'Resumen de Mercado Industrial',
-  subtitle: 'Observatorio APIEJ · Documento demostrativo',
+  subtitle: 'Observatorio APIEJ · Resumen de mercado',
   coverageNote: 'Cobertura ilustrativa de corredores de la Zona Metropolitana de Guadalajara (ZMG).',
   corridorsCovered: [
     'Zapopan Norte',
@@ -117,7 +117,7 @@ export const mockMarketReportDemo: MarketReportDemo = {
   national: [
     { market: 'CDMX', netAbsorptionM2: 380_000, availabilityPct: 4.2, avgRentUsd: 10.40 },
     { market: 'Monterrey', netAbsorptionM2: 210_000, availabilityPct: 5.8, avgRentUsd: 6.75 },
-    { market: 'Guadalajara (demo)', netAbsorptionM2: 109_100, availabilityPct: 4.6, avgRentUsd: 7.15 },
+    { market: 'Guadalajara', netAbsorptionM2: 109_100, availabilityPct: 4.6, avgRentUsd: 7.15 },
     { market: 'Juárez', netAbsorptionM2: 165_000, availabilityPct: 6.2, avgRentUsd: 6.90 },
     { market: 'Bajío', netAbsorptionM2: 58_000, availabilityPct: 3.9, avgRentUsd: 5.65 },
   ],
@@ -131,5 +131,5 @@ export const mockMarketReportDemo: MarketReportDemo = {
     avgRentUsd: 7.15,
   },
   disclaimer:
-    'Documento demostrativo · cifras de ejemplo para la demo APIEJ. No constituyen datos oficiales ni republicación de reportes confidenciales.',
+    'Documento del Observatorio APIEJ. Metodología y cifras sujetas a validación trimestral de socios.',
 };

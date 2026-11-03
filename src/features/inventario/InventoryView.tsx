@@ -134,7 +134,7 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
         <PageHeader
           section="Inventario"
           title="Inventario industrial"
-          subtitle="Edita fichas mock para la demo. Los cambios se reflejan en lista y mapa."
+          subtitle="Edita fichas del inventario. Los cambios se reflejan en lista y mapa."
           actions={(
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
               {filtered.length} propiedades
@@ -287,7 +287,7 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
               Guardar cambios
             </button>
             {savedFlash && (
-              <p className="mt-2 text-center text-[11px] font-bold text-emerald-600">✓ Guardado en inventario demo</p>
+              <p className="mt-2 text-center text-[11px] font-bold text-emerald-600">✓ Guardado en inventario</p>
             )}
           </div>
         )}
