@@ -1,14 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage.js';
-import { Sidebar } from './components/Sidebar.js';
+import { AppHeader } from './components/AppHeader.js';
 import type { TourStep } from './components/TourDock.js';
 import { TourDock, type TourAction } from './components/TourDock.js';
 import { AuditView } from './features/auditoria/AuditView.js';
 import { CaptureView } from './features/captura/CaptureView.js';
 import { ReportModal } from './features/reportes/ReportModal.js';
+import { ReportsView } from './features/reportes/ReportsView.js';
 import { CaptureWizard, type WizardDraft } from './features/captura/CaptureWizard.js';
 import { Dashboard, type Currency } from './features/dashboard/Dashboard.js';
+import { InventoryView } from './features/inventario/InventoryView.js';
 
 const ParkMapView = lazy(() =>
   import('./features/mapa/ParkMapView.js').then((m) => ({ default: m.ParkMapView })),
@@ -17,20 +19,23 @@ import { ValidationView, type ReviewItem } from './features/validacion/Validatio
 import {
   mockAuditSeed, mockBuildings, mockLands, mockParks, mockPeriods, mockQ1Kpis,
 } from './mock/market.mock.js';
+import { mockListings } from './mock/listings.mock.js';
 import { computeLiveKpis } from './services/analyticsService.js';
-import { fetchLiveFxRate, resolveFx } from './services/fxService.js';
+import { classifyFxSource, fetchLiveFxRate, invalidateFxCache, resolveFx, type FxSource } from './services/fxService.js';
 import { isStaff, listBuildingsFor, listLandsFor, listParksFor } from './services/marketService.js';
 import { PERSONAS } from './store/personas.js';
 import type { AuditEntry, Building, DemoPersonaKey, EntityStatus, Park } from './types/domain.js';
 import './App.css';
 
-type View = 'dashboard' | 'mapa' | 'captura' | 'validacion' | 'auditoria';
+type View = 'dashboard' | 'mapa' | 'inventario' | 'captura' | 'validacion' | 'reportes' | 'auditoria';
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: 'Dashboard',
   mapa: 'Mapa GIS',
+  inventario: 'Inventario',
   captura: 'Captura',
   validacion: 'Validación',
+  reportes: 'Reportes',
   auditoria: 'Auditoría',
 };
 
@@ -38,7 +43,7 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-const KNOWN_VIEWS: View[] = ['dashboard', 'mapa', 'captura', 'validacion', 'auditoria'];
+const KNOWN_VIEWS: View[] = ['dashboard', 'mapa', 'inventario', 'captura', 'validacion', 'reportes', 'auditoria'];
 
 function PlatformApp(): React.JSX.Element {
   const entryState = useLocation().state as { view?: string } | null;
@@ -57,6 +62,7 @@ function PlatformApp(): React.JSX.Element {
   const [tourStep, setTourStep] = useState<TourStep | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [liveFx, setLiveFx] = useState<number | null>(null);
+  const [fxFetchFailed, setFxFetchFailed] = useState(false);
 
   const persona = PERSONAS.find((p) => p.key === personaKey) ?? PERSONAS[0];
   const actor = persona.actor;
@@ -64,26 +70,42 @@ function PlatformApp(): React.JSX.Element {
   const readOnly = actor.role === 'MEMBER_VIEWER';
   const frozenFx = mockPeriods.find((p) => p.id === periodId)?.fxUsdMxn;
   const fx = resolveFx(liveFx, frozenFx);
-  const fxLive = liveFx !== null;
-
-  function revalidateFx(): void {
-    void fetchLiveFxRate().then((rate) => {
-      if (rate !== null) setLiveFx(rate);
-    });
-  }
-
-  const revalidateFxCb = useCallback(revalidateFx, []);
-
-  // Auto-fetch live USD/MXN on page load/refresh. Falls back to the frozen
-  // period rate (or 17.35) when offline — the app never breaks.
-  useEffect(() => {
-    revalidateFxCb();
-  }, [revalidateFxCb]);
+  const fxSource: FxSource = classifyFxSource(liveFx, frozenFx, fxFetchFailed);
 
   function flash(msg: string): void {
     setToast(msg);
     window.setTimeout(() => setToast(null), 4200);
   }
+
+  const revalidateFxCb = useCallback((opts?: { quiet?: boolean }) => {
+    invalidateFxCache();
+    void fetchLiveFxRate({ force: true }).then((rate) => {
+      if (rate !== null) {
+        setLiveFx(rate);
+        setFxFetchFailed(false);
+      } else {
+        setLiveFx(null);
+        setFxFetchFailed(true);
+        if (opts?.quiet !== true) {
+          setToast('No se pudo obtener FX en vivo — usando tipo de cambio del periodo.');
+          window.setTimeout(() => setToast(null), 4200);
+        }
+      }
+    });
+  }, []);
+
+  // Auto-fetch live USD/MXN on page load/refresh. Falls back to the frozen
+  // period rate (or 17.35) when offline — the app never breaks.
+  useEffect(() => {
+    void fetchLiveFxRate().then((rate) => {
+      if (rate !== null) {
+        setLiveFx(rate);
+        setFxFetchFailed(false);
+      } else {
+        setFxFetchFailed(true);
+      }
+    });
+  }, []);
 
   function switchPersona(key: DemoPersonaKey): void {
     setPersonaKey(key);
@@ -207,24 +229,25 @@ function PlatformApp(): React.JSX.Element {
       text: 'Explora la geolocalización de parques y genera el reporte ejecutivo oficial.',
       actions: () => [
         { label: 'Ir al Mapa GIS', run: () => setView('mapa') },
-        { label: 'Abrir reporte PDF', gold: true, run: () => setReportOpen(true) },
+        { label: 'Abrir Reportes PDF', gold: true, run: () => setView('reportes') },
       ],
     },
   };
 
   // Tenant-filtered datasets (backend RLS mirrored in marketService)
-  const visParks = useMemo(() => {
-    const r = listParksFor(actor, parks);
-    return r.ok ? r.data : [];
-  }, [actor, parks]);
-  const visBuildings = useMemo(() => {
-    const r = listBuildingsFor(actor, buildings);
-    return r.ok ? r.data : [];
-  }, [actor, buildings]);
-  const visLands = useMemo(() => {
-    const r = listLandsFor(actor, lands);
-    return r.ok ? r.data : [];
-  }, [actor, lands]);
+  const parksResult = useMemo(() => listParksFor(actor, parks), [actor, parks]);
+  const buildingsResult = useMemo(() => listBuildingsFor(actor, buildings), [actor, buildings]);
+  const landsResult = useMemo(() => listLandsFor(actor, lands), [actor, lands]);
+  const visParks = parksResult.ok ? parksResult.data : [];
+  const visBuildings = buildingsResult.ok ? buildingsResult.data : [];
+  const visLands = landsResult.ok ? landsResult.data : [];
+  const accessDenied = !parksResult.ok
+    ? parksResult.message
+    : !buildingsResult.ok
+      ? buildingsResult.message
+      : !landsResult.ok
+        ? landsResult.message
+        : null;
 
   // Live Q2 market aggregates — recalculated on every approval (Q1 stays frozen)
   const liveKpis = useMemo(
@@ -293,7 +316,7 @@ function PlatformApp(): React.JSX.Element {
     const stamp = Date.now() % 100000;
     setParks((prev) => [...prev, {
       id: `park-nuevo-${stamp}`, orgId: actor.orgId, name: 'Nuevo parque',
-      slug: `parque-nuevo-${stamp}`, municipality: 'El Salto', corridor: 'El Salto',
+      slug: `parque-nuevo-${stamp}`, municipality: 'El Salto', corridor: 'ES-TL-IM',
       totalLandM2: 0, developedM2: 0, reserveM2: 0, infrastructure: {},
       category: 'PCI', status: 'DRAFT', visibility: 'PRIVATE', updatedAt: nowIso(),
     }]);
@@ -348,15 +371,14 @@ function PlatformApp(): React.JSX.Element {
   }
 
   const allowedViews: View[] = readOnly
-    ? ['dashboard', 'mapa']
+    ? ['dashboard', 'mapa', 'inventario', 'reportes']
     : staff
-      ? ['dashboard', 'mapa', 'captura', 'validacion', 'auditoria']
-      : ['dashboard', 'mapa', 'captura', 'validacion'];
+      ? ['dashboard', 'mapa', 'inventario', 'captura', 'validacion', 'reportes', 'auditoria']
+      : ['dashboard', 'mapa', 'inventario', 'captura', 'validacion', 'reportes'];
 
   return (
-    <div className="min-h-screen w-full bg-[#EBF0F5]">
-      <div className="mx-auto flex w-full max-w-[1600px] items-start gap-6 px-4 py-6 md:px-6">
-      <Sidebar
+    <div className="min-h-screen w-full bg-[#F8FAFC]">
+      <AppHeader
         items={allowedViews.map((v) => ({
           key: v,
           label: VIEW_LABEL[v],
@@ -369,45 +391,29 @@ function PlatformApp(): React.JSX.Element {
         orgName={actor.orgName}
         visibleCounts={`${visParks.length} parques · ${visBuildings.length} naves · ${visLands.length} terrenos`}
       />
-      <div className="min-w-0 flex-1">
-      <div className="px-1 pt-1">
-      {tourStep !== null && (
-        <TourDock
-          step={tourStep}
-          total={5}
-          title={TOUR_COPY[tourStep].title}
-          text={TOUR_COPY[tourStep].text}
-          actions={TOUR_COPY[tourStep].actions()}
-          canPrev={tourStep > 1}
-          isLast={tourStep === 5}
-          onPrev={tourPrev}
-          onNext={tourNext}
-          onClose={() => setTourStep(null)}
-        />
-      )}
 
-        {/* Mobile nav — neu pill */}
-        <div className="fixed bottom-3 left-3 right-3 z-[80] flex gap-1 rounded-full border border-white/60 bg-[#EBF0F5] p-1.5 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff] md:hidden">
-          {allowedViews.map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={`flex-1 rounded-full px-2 py-2 text-[11px] font-bold transition ${view === v ? 'bg-[#0F172A] text-white shadow-sm' : 'text-slate-600'}`}
-            >
-              {VIEW_LABEL[v]}
-            </button>
-          ))}
-        </div>
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6">
+        {tourStep !== null && (
+          <TourDock
+            step={tourStep}
+            total={5}
+            title={TOUR_COPY[tourStep].title}
+            text={TOUR_COPY[tourStep].text}
+            actions={TOUR_COPY[tourStep].actions()}
+            canPrev={tourStep > 1}
+            isLast={tourStep === 5}
+            onPrev={tourPrev}
+            onNext={tourNext}
+            onClose={() => setTourStep(null)}
+          />
+        )}
 
-        {/* Main */}
-        <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter relative z-10 min-w-0 flex-1 pb-20 md:pb-0">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="font-display text-lg font-extrabold tracking-tight text-[#0F172A]">{VIEW_LABEL[view]}</h2>
-            <span className="rounded-full bg-[#E2E8F0] px-3 py-1 text-[11px] font-bold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
-              {visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos visibles
-            </span>
-          </div>
+        <main key={`${view}-${personaKey}-${periodId}`} className="animate-enter relative z-10 min-w-0">
+          {accessDenied !== null && (
+            <div className="mb-4 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-bold text-red-800 shadow-sm" role="alert">
+              Sin permiso — {accessDenied}
+            </div>
+          )}
 
           {view === 'dashboard' && (
             <Dashboard
@@ -420,11 +426,11 @@ function PlatformApp(): React.JSX.Element {
               onCurrency={setCurrency}
               readOnly={readOnly}
               fx={fx}
-              fxLive={fxLive}
-              onRevalidateFx={revalidateFxCb}
+              fxSource={fxSource}
+              onRevalidateFx={(quiet) => revalidateFxCb({ quiet: quiet === true })}
               pendingCount={inboxItems.length}
               onGoValidation={() => setView('validacion')}
-              onExport={() => setReportOpen(true)}
+              onExport={() => setView('reportes')}
               onOpenTour={() => {
                 setTourStep(1);
                 switchPersona('STAFF');
@@ -436,10 +442,12 @@ function PlatformApp(): React.JSX.Element {
           )}
 
           {view === 'mapa' && (
-            <Suspense fallback={<p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-6 text-sm font-medium text-slate-600 shadow-[7px_7px_14px_#c5ccd6,-7px_-7px_14px_#ffffff]">Cargando mapa GIS…</p>}>
+            <Suspense fallback={<p className="rounded-2xl bg-white p-6 text-sm font-medium text-slate-600 shadow-sm">Cargando mapa GIS…</p>}>
               <ParkMapView parks={visParks} buildings={visBuildings} lands={visLands} isStaff={staff} />
             </Suspense>
           )}
+
+          {view === 'inventario' && <InventoryView listings={mockListings} />}
 
           {view === 'captura' && !readOnly && (
             <CaptureView
@@ -469,33 +477,42 @@ function PlatformApp(): React.JSX.Element {
             />
           )}
 
+          {view === 'reportes' && (
+            <ReportsView
+              periods={mockPeriods}
+              live={liveKpis}
+              frozen={mockQ1Kpis}
+              currency={currency}
+              fx={fx}
+              generatedBy={persona.label}
+            />
+          )}
+
           {view === 'auditoria' && <AuditView entries={audit} isStaff={staff} />}
         </main>
-      </div>
 
-      {wizardOpen && !readOnly && (
-        <CaptureWizard
-          parks={visParks.length > 0 ? visParks : parks.filter((p) => p.orgId === actor.orgId)}
-          editing={editing}
-          fxUsdMxn={fx}
-          onClose={() => { setWizardOpen(false); setEditing(null); }}
-          onSave={saveWizard}
-        />
-      )}
+        {wizardOpen && !readOnly && (
+          <CaptureWizard
+            parks={visParks.length > 0 ? visParks : parks.filter((p) => p.orgId === actor.orgId)}
+            editing={editing}
+            fxUsdMxn={fx}
+            onClose={() => { setWizardOpen(false); setEditing(null); }}
+            onSave={saveWizard}
+          />
+        )}
 
-      {reportOpen && (
-        <ReportModal
-          live={liveKpis} frozen={mockQ1Kpis} currency={currency} fx={fx}
-          generatedBy={persona.label} onClose={() => setReportOpen(false)}
-        />
-      )}
+        {reportOpen && (
+          <ReportModal
+            live={liveKpis} frozen={mockQ1Kpis} currency={currency} fx={fx}
+            generatedBy={persona.label} onClose={() => setReportOpen(false)}
+          />
+        )}
 
-      {toast !== null && (
-        <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
-          {toast}
-        </div>
-      )}
-      </div>
+        {toast !== null && (
+          <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );

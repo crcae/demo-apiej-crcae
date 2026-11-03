@@ -3,7 +3,7 @@ import type { AuditEntry, Building, EntityStatus, Land, Park } from '../../types
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 
 type ReviewTab = 'pendientes' | 'observaciones' | 'resueltos';
-type DetailTab = 'info' | 'cambios' | 'docs';
+type DetailTab = 'info' | 'cambios';
 type Kind = 'PARK' | 'BUILDING' | 'LAND';
 
 export interface ReviewItem {
@@ -121,18 +121,16 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
 
   return (
     <div>
-      {/* Header */}
       <p className="text-xs font-medium text-slate-500">Panel / Validación</p>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">Revisión de registros</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">Consulta la información antes de aprobar o solicitar cambios.</p>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Bandeja de revisión</h2>
+          <p className="mt-1 text-sm font-medium text-slate-600">
+            Elige un registro → revisa datos → Aprobar, Pedir cambios o Rechazar.
+          </p>
         </div>
-        <span className="mr-2 rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700">
+        <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700">
           {counts.pendientes} pendientes
-        </span>
-        <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-          Datos de ejemplo
         </span>
       </div>
 
@@ -235,7 +233,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
               </div>
 
               <div className="mt-3 flex gap-5 border-b border-slate-200">
-                {([{ t: 'info', label: 'Información' }, { t: 'cambios', label: 'Cambios' }, { t: 'docs', label: 'Documentos' }] as Array<{ t: DetailTab; label: string }>).map(({ t, label }) => (
+                {([{ t: 'info', label: 'Información' }, { t: 'cambios', label: 'Historial' }] as Array<{ t: DetailTab; label: string }>).map(({ t, label }) => (
                   <button
                     key={t}
                     type="button"
@@ -306,12 +304,6 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                 </div>
               )}
 
-              {detailTab === 'docs' && (
-                <p className="mt-4 rounded-2xl bg-[#E0E5EC] p-4 text-xs font-medium text-slate-600 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
-                  Sin documentos adjuntos. La evidencia fotográfica y planos se habilitarán en la Fase 2.
-                </p>
-              )}
-
               {isStaff && selected.status === 'PENDING_VALIDATION' && (
                 <>
                   <p className="mb-2 mt-6 text-sm font-extrabold text-slate-900">Observaciones del revisor</p>
@@ -332,14 +324,14 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                       onClick={() => decide('VERIFIED')}
                       className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#10B981] px-6 py-2.5 text-xs font-extrabold text-white shadow-md transition-all hover:bg-[#059669]"
                     >
-                      ✓ Aprobar y verificar
+                      ✓ Aprobar
                     </button>
                     <button
                       type="button"
                       onClick={() => decide('CHANGES_REQUESTED')}
                       className="cursor-pointer rounded-xl border border-amber-500/80 px-5 py-2.5 text-xs font-bold text-amber-600 transition-all hover:bg-amber-500/10"
                     >
-                      Solicitar cambios
+                      Pedir cambios
                     </button>
                     <button
                       type="button"

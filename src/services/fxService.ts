@@ -6,15 +6,25 @@
 // to the period's frozen Banxico rate. Rates rounded to 2 decimals.
 
 export const FX_FALLBACK = 17.35;
+export const FX_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 const PRIMARY = 'https://api.exchangerate-api.com/v4/latest/USD';
 const FALLBACK = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
 const TIMEOUT_MS = 8000;
 
+/** How the effective FX was obtained for UI badges. */
+export type FxSource = 'live' | 'frozen' | 'fallback' | 'error';
+
 let cached: number | null = null;
+let cachedAt = 0;
 let inFlight: Promise<number | null> | null = null;
 
 function validRate(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v * 10000) / 10000 : null;
+}
+
+function cacheFresh(): boolean {
+  return cached !== null && Date.now() - cachedAt < FX_CACHE_TTL_MS;
 }
 
 async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
@@ -39,15 +49,28 @@ async function fetchOnce(signal: AbortSignal): Promise<number | null> {
   return fetchFallback(signal).catch(() => null);
 }
 
-/** Fetch live USD→MXN. Cached after first success; concurrent callers share one request. */
-export function fetchLiveFxRate(): Promise<number | null> {
-  if (cached !== null) return Promise.resolve(cached);
+/** Clear in-memory FX cache (period change / manual revalidate). */
+export function invalidateFxCache(): void {
+  cached = null;
+  cachedAt = 0;
+}
+
+/**
+ * Fetch live USD→MXN. Cached for FX_CACHE_TTL_MS; concurrent callers share one request.
+ * Pass `force: true` to bypass cache (manual revalidate).
+ */
+export function fetchLiveFxRate(opts?: { force?: boolean }): Promise<number | null> {
+  if (opts?.force === true) invalidateFxCache();
+  if (cacheFresh() && cached !== null) return Promise.resolve(cached);
   if (inFlight !== null) return inFlight;
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   inFlight = fetchOnce(ctrl.signal)
     .then((rate) => {
-      if (rate !== null) cached = rate;
+      if (rate !== null) {
+        cached = rate;
+        cachedAt = Date.now();
+      }
       return rate;
     })
     .catch(() => null)
@@ -61,4 +84,16 @@ export function fetchLiveFxRate(): Promise<number | null> {
 /** Resolve the effective rate: live override wins, otherwise the frozen period rate. */
 export function resolveFx(live: number | null, frozen: number | undefined): number {
   return live ?? frozen ?? FX_FALLBACK;
+}
+
+/** Classify FX source for Dashboard badges. `fetchFailed` = last live attempt returned null. */
+export function classifyFxSource(
+  live: number | null,
+  frozen: number | undefined,
+  fetchFailed: boolean,
+): FxSource {
+  if (live !== null) return 'live';
+  if (fetchFailed) return 'error';
+  if (frozen !== undefined) return 'frozen';
+  return 'fallback';
 }

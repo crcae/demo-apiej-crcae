@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { QUARTER_MONTHS } from '../../mock/market.mock.js';
 import type { MarketKpis, Period } from '../../types/domain.js';
+import type { FxSource } from '../../services/fxService.js';
 import { formatAreaM2, formatMxnM2, formatPct, formatUsdM2 } from '../../utils/formatters.js';
 
 export type Currency = 'USD' | 'MXN';
@@ -22,13 +23,25 @@ interface Props {
   onCurrency: (c: Currency) => void;
   readOnly: boolean;
   fx: number;
-  fxLive: boolean;
-  onRevalidateFx: () => void;
+  fxSource: FxSource;
+  /** Pass quiet=true for background refresh (no toast). */
+  onRevalidateFx: (quiet?: boolean) => void;
   pendingCount: number;
   onGoValidation: () => void;
   onExport: () => void;
   onOpenTour: () => void;
 }
+
+const FX_BADGE: Record<FxSource, { title: string; label: string; dot: string }> = {
+  live: { title: 'Tipo de cambio EN VIVO (mercado abierto)', label: 'LIVE', dot: 'animate-pulse bg-[#ff8d00]' },
+  frozen: { title: 'Tipo de cambio Banxico congelado del periodo', label: 'PERIODO', dot: 'bg-slate-400' },
+  fallback: { title: 'Usando tipo de cambio de respaldo (17.35)', label: 'FALLBACK', dot: 'bg-amber-500' },
+  error: {
+    title: 'No se pudo obtener el tipo de cambio en vivo — usando el del periodo (congelado)',
+    label: 'PERIODO',
+    dot: 'bg-red-500',
+  },
+};
 
 const card =
   'rounded-3xl bg-[#EBF0F5] p-5 shadow-[8px_8px_18px_#c5ccd6,-8px_-8px_18px_#ffffff] transition-all duration-300 hover:shadow-[10px_10px_22px_#c5ccd6,-10px_-10px_22px_#ffffff]';
@@ -91,12 +104,12 @@ function ChartTip({ active, payload, label }: { active?: boolean; payload?: TipE
 }
 
 export function Dashboard({
-  periods, activePeriodId, onPeriod, live, frozen, currency, onCurrency, readOnly, fx, fxLive, onRevalidateFx, pendingCount, onGoValidation, onExport, onOpenTour,
+  periods, activePeriodId, onPeriod, live, frozen, currency, onCurrency, readOnly, fx, fxSource, onRevalidateFx, pendingCount, onGoValidation, onExport, onOpenTour,
 }: Props): React.JSX.Element {
   // Revalidate the live FX rate when the period or currency changes so all
   // dependent $/m² figures update in real time (frozen fallback always safe).
   useEffect(() => {
-    onRevalidateFx();
+    onRevalidateFx(true);
   }, [activePeriodId, currency, onRevalidateFx]);
 
   const activePeriod = periods.find((p) => p.id === activePeriodId);
@@ -129,14 +142,25 @@ export function Dashboard({
             Inventario, disponibilidad y actividad en Jalisco.
           </p>
         </div>
-        <span
-          className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white/80 px-3 py-1.5 text-xs font-bold text-slate-800 shadow-sm"
-          title={fxLive ? 'Tipo de cambio EN VIVO (mercado abierto)' : 'Tipo de cambio Banxico congelado del periodo'}
+        <button
+          type="button"
+          onClick={() => onRevalidateFx(false)}
+          className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm transition hover:opacity-90 ${
+            fxSource === 'error'
+              ? 'border-red-300 bg-red-50 text-red-800'
+              : 'border-slate-300 bg-white/80 text-slate-800'
+          }`}
+          title={`${FX_BADGE[fxSource].title} · Clic para revalidar`}
         >
-          USD/MXN {fx.toFixed(fxLive ? 4 : 2)}
-          <i className={`inline-block h-2 w-2 rounded-full ${fxLive ? 'animate-pulse bg-[#ff8d00]' : 'bg-slate-400'}`} />
-          {fxLive ? 'LIVE' : ''}
-        </span>
+          USD/MXN {fx.toFixed(fxSource === 'live' ? 4 : 2)}
+          <i className={`inline-block h-2 w-2 rounded-full ${FX_BADGE[fxSource].dot}`} />
+          {FX_BADGE[fxSource].label}
+        </button>
+        {fxSource === 'error' && (
+          <span className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-900 shadow-sm">
+            Usando tipo de cambio del periodo (congelado)
+          </span>
+        )}
         <span className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
           Trimestre actual: Q4 2026
         </span>

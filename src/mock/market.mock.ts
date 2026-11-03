@@ -23,7 +23,7 @@ export const mockParks: Park[] = [
   {
     id: 'park-salot', orgId: ORG_ALPHA,
     name: 'Parque Industrial El Salto', slug: 'parque-industrial-el-salto',
-    municipality: 'El Salto', corridor: 'El Salto',
+    municipality: 'El Salto', corridor: 'ES-TL-IM',
     address: 'Carretera a Chapala Km 12',
     lat: 20.522, lng: -103.193,
     totalLandM2: 450000, developedM2: 320000, reserveM2: 130000,
@@ -35,7 +35,7 @@ export const mockParks: Park[] = [
   {
     id: 'park-tlajo-alpha', orgId: ORG_ALPHA,
     name: 'Ampliación Tlajomulco (borrador)', slug: 'ampliacion-tlajomulco-borrador',
-    municipality: 'Tlajomulco', corridor: 'Tlajomulco',
+    municipality: 'Tlajomulco', corridor: 'López Mateos Sur',
     address: 'Av. Adolf Horn Km 8',
     lat: 20.472, lng: -103.452,
     totalLandM2: 120000, developedM2: 0, reserveM2: 120000,
@@ -46,7 +46,7 @@ export const mockParks: Park[] = [
   {
     id: 'park-zapopan-beta', orgId: ORG_BETA,
     name: 'Zapopan Logistics Park', slug: 'zapopan-logistics-park',
-    municipality: 'Zapopan', corridor: 'Zapopan',
+    municipality: 'Zapopan', corridor: 'Zapopan Norte',
     address: 'Periférico Norte 4200',
     lat: 20.724, lng: -103.402,
     totalLandM2: 280000, developedM2: 210000, reserveM2: 70000,
@@ -169,19 +169,19 @@ export const mockQ1Kpis: MarketKpis = {
   avgRentUsd: 6.32,
   avgRentMxn: 108.2,
   corridors: [
-    { corridor: 'El Salto', inventoryM2: 26800, vacantM2: 5200, vacancyPct: 19.4, avgRentUsd: 6.4, netAbsorptionM2: 5100, grossAbsorptionM2: 6200 },
-    { corridor: 'Tlajomulco', inventoryM2: 0, vacantM2: 0, vacancyPct: 0, avgRentUsd: null, netAbsorptionM2: 0, grossAbsorptionM2: 0 },
-    { corridor: 'Zapopan', inventoryM2: 32300, vacantM2: 5600, vacancyPct: 17.3, avgRentUsd: 6.5, netAbsorptionM2: 6200, grossAbsorptionM2: 8100 },
+    { corridor: 'ES-TL-IM', inventoryM2: 26800, vacantM2: 5200, vacancyPct: 19.4, avgRentUsd: 6.4, netAbsorptionM2: 5100, grossAbsorptionM2: 6200 },
+    { corridor: 'López Mateos Sur', inventoryM2: 0, vacantM2: 0, vacancyPct: 0, avgRentUsd: null, netAbsorptionM2: 0, grossAbsorptionM2: 0 },
+    { corridor: 'Zapopan Norte', inventoryM2: 32300, vacantM2: 5600, vacancyPct: 17.3, avgRentUsd: 6.5, netAbsorptionM2: 6200, grossAbsorptionM2: 8100 },
     { corridor: 'Periférico Sur', inventoryM2: 9400, vacantM2: 1800, vacancyPct: 19.1, avgRentUsd: 5.7, netAbsorptionM2: 1100, grossAbsorptionM2: 1500 },
   ],
 };
 
 /** Corridor scaffold for live Q2 computation (Q1 rows stay frozen). */
-export const corridorOrder: string[] = ['El Salto', 'Tlajomulco', 'Zapopan', 'Periférico Sur'];
+export const corridorOrder: string[] = ['ES-TL-IM', 'López Mateos Sur', 'Zapopan Norte', 'Periférico Sur'];
 
 export function corridorOf(parkId: string | null | undefined, parks: Park[]): string {
   const p = parks.find((x) => x.id === parkId);
-  return p?.corridor ?? 'El Salto';
+  return p?.corridor ?? 'ES-TL-IM';
 }
 
 export const mockAuditSeed: AuditEntry[] = [

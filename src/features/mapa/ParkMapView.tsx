@@ -1,7 +1,9 @@
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { FeatureCollection, Polygon } from 'geojson';
+import {
+  CORRIDOR_FC, CORRIDORS, LOCALITY_PILLS, corridorCenter, type CorridorDef,
+} from '../../mock/corridors.mock.js';
 import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
@@ -58,51 +60,10 @@ const MAP_HOSTS = ['basemaps.cartocdn.com', 'tile.openstreetmap.org', 'tile.open
 
 const GDL: [number, number] = [-103.33, 20.62];
 
-interface CorridorZone {
-  name: string;
-  color: string;
-  center: [number, number];
-  dx: number;
-  dy: number;
-}
-
-// Illustrative corridor bounds across the Guadalajara metro area (reference: APIEJ).
-const CORRIDOR_ZONES: CorridorZone[] = [
-  { name: 'Zapopan Norte', color: '#3b82f6', center: [-103.46, 20.76], dx: 0.05, dy: 0.035 },
-  { name: 'Antigua Zona Industrial', color: '#06b6d4', center: [-103.33, 20.66], dx: 0.045, dy: 0.03 },
-  { name: 'Periférico Sur', color: '#84cc16', center: [-103.38, 20.6], dx: 0.05, dy: 0.025 },
-  { name: 'López Mateos Sur', color: '#2563eb', center: [-103.46, 20.57], dx: 0.05, dy: 0.03 },
-  { name: 'El Salto', color: '#f97316', center: [-103.2, 20.52], dx: 0.055, dy: 0.035 },
-  { name: 'Tonalá', color: '#f59e0b', center: [-103.24, 20.63], dx: 0.04, dy: 0.03 },
-  { name: 'Circuito Metropolitano Sur', color: '#a3e635', center: [-103.31, 20.55], dx: 0.05, dy: 0.025 },
-  { name: 'Carretera a Colima', color: '#c084fc', center: [-103.52, 20.48], dx: 0.06, dy: 0.04 },
-];
-
-// Extra locality reference pills (context only — not selectable zones).
-const LOCALITY_PILLS: Array<{ name: string; at: [number, number] }> = [
-  { name: 'La Venta del Astillero', at: [-103.5, 20.73] },
-  { name: 'Santa Anita', at: [-103.44, 20.53] },
-  { name: 'San Agustín', at: [-103.47, 20.53] },
-  { name: 'Tlaquepaque de Zúñiga', at: [-103.31, 20.64] },
-];
-
-function zoneRing(z: CorridorZone): number[][][] {
-  const [cx, cy] = z.center;
-  return [[[cx - z.dx, cy - z.dy], [cx + z.dx, cy - z.dy], [cx + z.dx, cy + z.dy], [cx - z.dx, cy + z.dy], [cx - z.dx, cy - z.dy]]];
-}
-
-const CORRIDOR_FC: FeatureCollection<Polygon> = {
-  type: 'FeatureCollection',
-  features: CORRIDOR_ZONES.map((z) => ({
-    type: 'Feature',
-    properties: { name: z.name, color: z.color },
-    geometry: { type: 'Polygon', coordinates: zoneRing(z) },
-  })),
-};
-
-function zoneBounds(z: CorridorZone): maplibregl.LngLatBounds {
-  const [cx, cy] = z.center;
-  return new maplibregl.LngLatBounds([cx - z.dx, cy - z.dy], [cx + z.dx, cy + z.dy]);
+function zoneBounds(c: CorridorDef): maplibregl.LngLatBounds {
+  const b = new maplibregl.LngLatBounds();
+  c.path.forEach((p) => b.extend(p));
+  return b;
 }
 
 function pinStyle(status: Park['status']): { background: string; glyph: string; fg: string } {
@@ -132,8 +93,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   const [fStatus, setFStatus] = useState<string>('ALL');
   const [fClass, setFClass] = useState<string>('ALL');
   const [fAvail, setFAvail] = useState<string>('ALL');
-  const [basemap, setBasemap] = useState<Basemap>('mapa');
-  const basemapRef = useRef<Basemap>('mapa');
+  const [basemap, setBasemap] = useState<Basemap>('satelite');
+  const basemapRef = useRef<Basemap>('satelite');
   const [showCorr, setShowCorr] = useState(true);
   const [tab, setTab] = useState<SideTab>('corredores');
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -141,7 +102,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
 
   const corridors = useMemo(() => [...new Set(parks.map((p) => p.corridor))], [parks]);
 
-  const filtered = useMemo(() => {
+  const matchedByFilters = useMemo(() => {
     const q = query.trim().toLowerCase();
     return parks.filter((p) => {
       if (fCorridor !== 'ALL' && p.corridor !== fCorridor) return false;
@@ -150,9 +111,24 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       if (fClass !== 'ALL' && !kids.some((b) => b.buildingClass === fClass)) return false;
       if (fAvail !== 'ALL' && !kids.some((b) => b.availabilityState === fAvail)) return false;
       if (q !== '' && !`${p.name} ${p.municipality} ${p.address ?? ''}`.toLowerCase().includes(q)) return false;
-      return p.lat !== undefined && p.lng !== undefined;
+      return true;
     });
   }, [parks, buildings, query, fCorridor, fStatus, fClass, fAvail]);
+
+  const missingCoords = useMemo(
+    () => matchedByFilters.filter((p) => p.lat === undefined || p.lng === undefined).length,
+    [matchedByFilters],
+  );
+
+  /** Pins on the map — only parks with coordinates. */
+  const filtered = useMemo(
+    () => matchedByFilters.filter((p) => p.lat !== undefined && p.lng !== undefined),
+    [matchedByFilters],
+  );
+
+  const filtersActive = query !== '' || fCorridor !== 'ALL' || fStatus !== 'ALL' || fClass !== 'ALL' || fAvail !== 'ALL';
+  const emptyRole = parks.length === 0;
+  const emptyFilters = !emptyRole && matchedByFilters.length === 0;
 
   const selected = parks.find((p) => p.id === selectedId) ?? null;
   const selBuildings = selected ? buildings.filter((b) => b.parkId === selected.id) : [];
@@ -166,12 +142,12 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     map.addSource('corridors', { type: 'geojson', data: CORRIDOR_FC });
     map.addLayer({
       id: 'corr-fill', type: 'fill', source: 'corridors',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.3 },
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.42 },
       layout: { visibility: showCorr ? 'visible' : 'none' },
     });
     map.addLayer({
       id: 'corr-line', type: 'line', source: 'corridors',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 2 },
+      paint: { 'line-color': ['get', 'color'], 'line-width': 3.5 },
       layout: { visibility: showCorr ? 'visible' : 'none' },
     });
   }
@@ -229,7 +205,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
       el.style.display = showCorr ? 'block' : 'none';
       labelMarkers.current.push(new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map));
     };
-    CORRIDOR_ZONES.forEach((z) => pill(z.name, z.center, false));
+    CORRIDORS.forEach((z) => pill(z.short, corridorCenter(z), false));
     LOCALITY_PILLS.forEach((l) => pill(l.name, l.at, true));
   }
 
@@ -298,7 +274,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     if (mapRef.current === null || mapObj.current !== null) return;
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: STYLE_PRIMARY,
+      style: STYLE_SAT,
       center: GDL,
       zoom: 10,
       attributionControl: { compact: true },
@@ -385,7 +361,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
     if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 60, maxZoom: 12 });
   }
 
-  function focusZone(z: CorridorZone): void {
+  function focusZone(z: CorridorDef): void {
     mapObj.current?.fitBounds(zoneBounds(z), { padding: 50, maxZoom: 13 });
   }
 
@@ -462,12 +438,58 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
         </button>
       </div>
 
+      {emptyRole && (
+        <div className="mb-4 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
+          Sin parques visibles para tu rol.
+        </div>
+      )}
+      {emptyFilters && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-sm">
+          <span>Ningún parque coincide con los filtros.</span>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-full bg-[#0F172A] px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
+          >
+            Restablecer filtros
+          </button>
+        </div>
+      )}
+      {!emptyRole && !emptyFilters && missingCoords > 0 && (
+        <p className="mb-3 text-xs font-semibold text-slate-500">
+          {missingCoords} parque{missingCoords === 1 ? '' : 's'} sin coordenadas (no aparecen como pin).
+        </p>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         {/* Map canvas */}
         <Card>
           <CardBody>
             <div ref={wrapRef} className="relative">
-              <div ref={mapRef} className="h-[calc(100vh-280px)] min-h-[520px] w-full overflow-hidden rounded-3xl ring-1 ring-slate-200" />
+              <div ref={mapRef} className="h-[calc(100vh-140px)] min-h-[640px] w-full overflow-hidden rounded-3xl ring-1 ring-slate-200" />
+              {(emptyRole || emptyFilters) && (
+                <div className="absolute inset-0 z-[5] flex items-center justify-center rounded-3xl bg-[#EBF0F5]/85 p-6">
+                  <div className="max-w-sm rounded-2xl border border-white/60 bg-[#EBF0F5] p-5 text-center shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+                    <p className="text-sm font-extrabold text-slate-900">
+                      {emptyRole ? 'Sin parques visibles para tu rol' : 'Ningún parque coincide con los filtros'}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-600">
+                      {emptyRole
+                        ? 'Cambia de persona en el sidebar o espera datos verificados.'
+                        : 'Ajusta búsqueda, corredor o disponibilidad.'}
+                    </p>
+                    {filtersActive && (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="mt-3 rounded-xl bg-[#00a2ff] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
+                      >
+                        Restablecer filtros
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
               {tileState === 'loading' && (
                 <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2">
                   <div className="flex items-center gap-2 rounded-full border border-white/60 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
@@ -561,7 +583,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#00a2ff]" /> En revisión</span>
                 <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-slate-300" /> Borrador</span>
               </span>
-              <span className="font-medium">© OpenStreetMap contributors | Referencia de corredores: APIEJ | {filtered.length} parques visibles</span>
+              <span className="font-medium">© OpenStreetMap contributors | Referencia de corredores: APIEJ | {filtered.length} pines · {matchedByFilters.length} coincidencias</span>
             </div>
             {tileState === 'error' && (
               <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
@@ -613,9 +635,9 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 <h3 className="text-lg font-extrabold text-slate-900">Corredores industriales</h3>
                 <p className="mb-3 text-xs font-medium text-slate-500">Selecciona una zona para explorar.</p>
                 <ul className="space-y-1.5">
-                  {CORRIDOR_ZONES.map((z) => (
+                  {CORRIDORS.map((z) => (
                     <li
-                      key={z.name}
+                      key={z.id}
                       className="flex items-center gap-2.5 rounded-2xl border border-white/60 bg-[#EBF0F5] p-2.5 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
                     >
                       <i className="h-3.5 w-3.5 shrink-0 rounded-md" style={{ background: z.color }} />

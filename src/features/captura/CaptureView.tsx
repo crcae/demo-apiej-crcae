@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Building, EntityStatus, Land, Park } from '../../types/domain.js';
+import { firstZodMessage, formatZodErrors, parkDraftSchema } from '../../schemas/capture.js';
 import { formatAreaM2 } from '../../utils/formatters.js';
 import { BuildingForm } from '../naves/BuildingForm.js';
 import { LandForm } from '../terrenos/LandForm.js';
@@ -48,6 +49,8 @@ export function CaptureView({
   const [dev, setDev] = useState('');
   const [reserve, setReserve] = useState('');
   const [comment, setComment] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const list = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -74,8 +77,29 @@ export function CaptureView({
   const match = selected !== null && num(total) === num(dev) + num(reserve);
   const diff = Math.abs(num(total) - (num(dev) + num(reserve)));
 
-  function draft(): Partial<Park> {
-    return { name: name.trim(), municipality: municipio, totalLandM2: num(total), developedM2: num(dev), reserveM2: num(reserve) };
+  function parseDraftCandidate(): Record<string, unknown> {
+    const totalN = Number(total.replace(/,/g, ''));
+    const devN = Number(dev.replace(/,/g, ''));
+    const reserveN = Number(reserve.replace(/,/g, ''));
+    return {
+      name: name.trim(),
+      municipality: municipio,
+      totalLandM2: Number.isFinite(totalN) ? totalN : Number.NaN,
+      developedM2: Number.isFinite(devN) ? devN : Number.NaN,
+      reserveM2: Number.isFinite(reserveN) ? reserveN : Number.NaN,
+    };
+  }
+
+  function validatePark(): Partial<Park> | null {
+    const parsed = parkDraftSchema.safeParse(parseDraftCandidate());
+    if (!parsed.success) {
+      setFieldErrors(formatZodErrors(parsed.error));
+      setFormError(firstZodMessage(parsed.error));
+      return null;
+    }
+    setFieldErrors({});
+    setFormError(null);
+    return parsed.data;
   }
 
   function reset(): void {
@@ -86,6 +110,8 @@ export function CaptureView({
     setDev(String(selected.developedM2));
     setReserve(String(selected.reserveM2));
     setComment('');
+    setFormError(null);
+    setFieldErrors({});
   }
 
   const sel = statusBadge(selected?.status ?? 'DRAFT');
@@ -93,16 +119,14 @@ export function CaptureView({
 
   return (
     <div>
-      {/* Header */}
       <p className="text-xs font-medium text-slate-500">Panel / Captura</p>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">Registro de parques y espacios</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">Actualiza la información y envíala a revisión.</p>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Captura sencilla</h2>
+          <p className="mt-1 text-sm font-medium text-slate-600">
+            1) Completa datos · 2) Guarda borrador · 3) Envía a revisión. Las naves se editan con el wizard.
+          </p>
         </div>
-        <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-          Datos de ejemplo
-        </span>
       </div>
 
       <div className="mb-4 mt-4 flex flex-wrap items-center gap-2">
@@ -227,6 +251,7 @@ export function CaptureView({
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">Nombre del parque *</span>
                     <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+                    {fieldErrors.name !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{fieldErrors.name}</p>}
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">Municipio *</span>
@@ -235,6 +260,7 @@ export function CaptureView({
                         <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
+                    {fieldErrors.municipality !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{fieldErrors.municipality}</p>}
                   </label>
                 </div>
 
@@ -277,6 +303,9 @@ export function CaptureView({
                 />
 
                 <p className="mt-6 text-xs font-medium text-slate-400">* Campos obligatorios</p>
+                {formError !== null && (
+                  <p className="mt-2 rounded-xl bg-red-50 p-2 text-xs font-bold text-red-600">{formError}</p>
+                )}
                 <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                   <button
                     type="button" onClick={reset}
@@ -287,23 +316,25 @@ export function CaptureView({
                   <button
                     type="button"
                     onClick={() => {
-                      if (name.trim() === '' || municipio === '') return;
-                      onUpdatePark(selected.id, draft());
+                      const draft = validatePark();
+                      if (draft === null) return;
+                      onUpdatePark(selected.id, draft);
                     }}
                     className="mr-3 rounded-xl bg-[#EBF0F5] px-4 py-2.5 text-xs font-bold text-blue-600 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff] transition-all hover:text-blue-800"
                   >
-                    Guardar borrador
+                    Guardar
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      if (name.trim() === '' || municipio === '') return;
-                      onUpdatePark(selected.id, draft());
+                      const draft = validatePark();
+                      if (draft === null) return;
+                      onUpdatePark(selected.id, draft);
                       onSubmitReview('PARK', selected.id, 'PENDING_VALIDATION', comment || undefined);
                     }}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#00a2ff] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#008cdc]"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#4A6CFF] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#3b5aef]"
                   >
-                    Enviar a validación ➔
+                    Enviar a revisión ➔
                   </button>
                 </div>
                 <p className="mt-1.5 text-right text-[10px] font-medium text-slate-400">

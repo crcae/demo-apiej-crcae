@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { AvailabilityState, Building, BuildingClass, Park, Visibility } from '../../types/domain.js';
+import { buildingDraftSchema, firstZodMessage, formatZodErrors } from '../../schemas/capture.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 import { Card, CardBody, Field, inputCls } from '../../components/ui/primitives.js';
 
@@ -28,6 +29,12 @@ interface Props {
   onSave: (draft: WizardDraft, submit: boolean, editingId: string | null) => void;
 }
 
+function parseNonNeg(v: string): number | null {
+  if (v.trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Props): React.JSX.Element {
   const [step, setStep] = useState(1);
   const [parkId, setParkId] = useState(editing?.parkId ?? parks[0]?.id ?? '');
@@ -44,35 +51,77 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
   const [avail, setAvail] = useState<AvailabilityState>(editing?.availabilityState ?? 'AVAILABLE');
   const [rent, setRent] = useState(String(editing?.askingRentUsdM2 ?? 6.9));
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const num = (v: string, fallback = 0): number => {
-    const n = Number(v);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
-  };
+  function buildCandidate(): Record<string, unknown> {
+    const grossN = parseNonNeg(gross);
+    const rentableN = parseNonNeg(rentable);
+    const docksN = parseNonNeg(docks);
+    const rampsN = parseNonNeg(ramps);
+    const heightN = height.trim() === '' ? undefined : parseNonNeg(height);
+    const powerN = power.trim() === '' ? undefined : parseNonNeg(power);
+    const rentN = rent.trim() === '' ? undefined : parseNonNeg(rent);
 
-  function draft(): WizardDraft {
     return {
-      parkId, code: code.trim(), buildingClass: bClass,
-      totalGrossM2: num(gross), netRentableM2: num(rentable),
-      clearHeightM: height === '' ? undefined : num(height),
-      dockDoors: Math.round(num(docks)), ramps: Math.round(num(ramps)),
-      powerKva: power === '' ? undefined : num(power),
-      hasGas: gas, hasCrane: crane,
+      parkId,
+      code: code.trim(),
+      buildingClass: bClass,
+      totalGrossM2: grossN ?? Number.NaN,
+      netRentableM2: rentableN ?? Number.NaN,
+      clearHeightM: heightN === null ? Number.NaN : heightN,
+      dockDoors: docksN === null ? Number.NaN : Math.round(docksN),
+      ramps: rampsN === null ? Number.NaN : Math.round(rampsN),
+      powerKva: powerN === null ? Number.NaN : powerN,
+      hasGas: gas,
+      hasCrane: crane,
       availabilityState: avail,
-      askingRentUsdM2: rent === '' ? undefined : num(rent),
+      askingRentUsdM2: rentN === null ? Number.NaN : rentN,
       visibility: 'PRIVATE',
     };
   }
 
-  function valid(): boolean {
-    if (parkId === '' || code.trim() === '') { setError('Código y parque son obligatorios.'); return false; }
-    if (num(rentable) <= 0) { setError('La superficie rentable debe ser mayor a 0.'); return false; }
+  function validate(): WizardDraft | null {
+    const candidate = buildCandidate();
+    // Drop undefined optionals that failed empty-string path
+    if (candidate.clearHeightM === undefined) delete candidate.clearHeightM;
+    if (candidate.powerKva === undefined) delete candidate.powerKva;
+    if (candidate.askingRentUsdM2 === undefined) delete candidate.askingRentUsdM2;
+
+    const parsed = buildingDraftSchema.safeParse(candidate);
+    if (!parsed.success) {
+      setFieldErrors(formatZodErrors(parsed.error));
+      setError(firstZodMessage(parsed.error));
+      return null;
+    }
+    setFieldErrors({});
     setError(null);
-    return true;
+    return parsed.data as WizardDraft;
   }
 
-  const d = draft();
+  function previewDraft(): WizardDraft {
+    const g = parseNonNeg(gross) ?? 0;
+    const r = parseNonNeg(rentable) ?? 0;
+    return {
+      parkId,
+      code: code.trim(),
+      buildingClass: bClass,
+      totalGrossM2: g,
+      netRentableM2: r,
+      clearHeightM: height.trim() === '' ? undefined : (parseNonNeg(height) ?? undefined),
+      dockDoors: Math.round(parseNonNeg(docks) ?? 0),
+      ramps: Math.round(parseNonNeg(ramps) ?? 0),
+      powerKva: power.trim() === '' ? undefined : (parseNonNeg(power) ?? undefined),
+      hasGas: gas,
+      hasCrane: crane,
+      availabilityState: avail,
+      askingRentUsdM2: rent.trim() === '' ? undefined : (parseNonNeg(rent) ?? undefined),
+      visibility: 'PRIVATE',
+    };
+  }
+
+  const d = previewDraft();
   const rentMxn = d.askingRentUsdM2 !== undefined ? d.askingRentUsdM2 * fxUsdMxn : undefined;
+  const err = (key: string): string | undefined => fieldErrors[key];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#0B192C]/60 p-4 sm:items-center" onClick={onClose}>
@@ -97,9 +146,11 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
                   <select className={inputCls} value={parkId} onChange={(e) => setParkId(e.target.value)}>
                     {parks.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
+                  {err('parkId') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('parkId')}</p>}
                 </Field>
                 <Field label="Código (ej. N-04)">
                   <input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} />
+                  {err('code') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('code')}</p>}
                 </Field>
                 <Field label="Clase">
                   <select className={inputCls} value={bClass} onChange={(e) => setBClass(e.target.value as BuildingClass)}>
@@ -108,21 +159,27 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
                 </Field>
                 <Field label="Superficie bruta (m²)">
                   <input className={inputCls} inputMode="decimal" value={gross} onChange={(e) => setGross(e.target.value)} />
+                  {err('totalGrossM2') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('totalGrossM2')}</p>}
                 </Field>
                 <Field label="Superficie rentable (m²)">
                   <input className={inputCls} inputMode="decimal" value={rentable} onChange={(e) => setRentable(e.target.value)} />
+                  {err('netRentableM2') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('netRentableM2')}</p>}
                 </Field>
                 <Field label="Altura libre (m)">
                   <input className={inputCls} inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} />
+                  {err('clearHeightM') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('clearHeightM')}</p>}
                 </Field>
                 <Field label="Andenes">
                   <input className={inputCls} inputMode="numeric" value={docks} onChange={(e) => setDocks(e.target.value)} />
+                  {err('dockDoors') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('dockDoors')}</p>}
                 </Field>
                 <Field label="Rampas">
                   <input className={inputCls} inputMode="numeric" value={ramps} onChange={(e) => setRamps(e.target.value)} />
+                  {err('ramps') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('ramps')}</p>}
                 </Field>
                 <Field label="Subestación (kVA)">
                   <input className={inputCls} inputMode="decimal" value={power} onChange={(e) => setPower(e.target.value)} />
+                  {err('powerKva') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('powerKva')}</p>}
                 </Field>
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-600">
                   <input type="checkbox" checked={gas} onChange={(e) => setGas(e.target.checked)} className="h-4 w-4 accent-brand-blue" /> Gas natural
@@ -145,6 +202,7 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
                 </Field>
                 <Field label="Renta pedida (USD/m²)">
                   <input className={inputCls} inputMode="decimal" value={rent} onChange={(e) => setRent(e.target.value)} />
+                  {err('askingRentUsdM2') !== undefined && <p className="mt-1 text-[11px] font-bold text-red-600">{err('askingRentUsdM2')}</p>}
                 </Field>
                 <p className="col-span-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
                   Conversión automática Banxico {fxUsdMxn}: {formatUsdM2(d.askingRentUsdM2)} ≈{' '}
@@ -178,7 +236,7 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
               <div className="flex gap-2">
                 {step < 3 && (
                   <button
-                    type="button" onClick={() => { if (valid()) setStep((s) => s + 1); }}
+                    type="button" onClick={() => { if (validate() !== null) setStep((s) => s + 1); }}
                     className="rounded-xl bg-brand-blue px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
                   >
                     Siguiente
@@ -187,13 +245,21 @@ export function CaptureWizard({ parks, editing, fxUsdMxn, onClose, onSave }: Pro
                 {step === 3 && (
                   <>
                     <button
-                      type="button" onClick={() => { if (valid()) onSave(draft(), false, editing?.id ?? null); }}
+                      type="button"
+                      onClick={() => {
+                        const draft = validate();
+                        if (draft !== null) onSave(draft, false, editing?.id ?? null);
+                      }}
                       className="rounded-xl bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300"
                     >
                       Guardar borrador
                     </button>
                     <button
-                      type="button" onClick={() => { if (valid()) onSave(draft(), true, editing?.id ?? null); }}
+                      type="button"
+                      onClick={() => {
+                        const draft = validate();
+                        if (draft !== null) onSave(draft, true, editing?.id ?? null);
+                      }}
                       className="rounded-xl bg-[#2563EB] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
                     >
                       Enviar a validación

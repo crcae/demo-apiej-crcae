@@ -10,11 +10,8 @@ interface Props {
   onSubmitForReview: (id: string, to: EntityStatus, comment?: string) => void;
 }
 
+/** Read-only ficha + transición de estado. La edición de campos va por el wizard. */
 export function BuildingForm({ building, isStaff, onSubmitForReview }: Props): React.JSX.Element {
-  const [code, setCode] = useState(building.code);
-  const [rent, setRent] = useState(String(building.askingRentUsdM2 ?? ''));
-  const [docks, setDocks] = useState(String(building.dockDoors));
-  const [height, setHeight] = useState(String(building.clearHeightM ?? ''));
   const [comment, setComment] = useState('');
 
   return (
@@ -26,27 +23,34 @@ export function BuildingForm({ building, isStaff, onSubmitForReview }: Props): R
           </h3>
           <StatusBadge status={building.status} />
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Field label="Código">
-            <input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} />
-          </Field>
-          <Field label="Renta USD/m²">
-            <input className={inputCls} inputMode="decimal" value={rent} onChange={(e) => setRent(e.target.value)} />
-          </Field>
-          <Field label="Andenes">
-            <input className={inputCls} inputMode="numeric" value={docks} onChange={(e) => setDocks(e.target.value)} />
-          </Field>
-          <Field label="Altura libre (m)">
-            <input className={inputCls} inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} />
-          </Field>
-        </div>
+        <dl className="grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+          <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100">
+            <dt className="font-medium text-slate-500">Código</dt>
+            <dd className="font-bold text-slate-800">{building.code}</dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100">
+            <dt className="font-medium text-slate-500">Renta USD/m²</dt>
+            <dd className="font-bold text-slate-800">{formatUsdM2(building.askingRentUsdM2)}</dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100">
+            <dt className="font-medium text-slate-500">Andenes</dt>
+            <dd className="font-bold text-slate-800">{building.dockDoors}</dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100">
+            <dt className="font-medium text-slate-500">Altura libre</dt>
+            <dd className="font-bold text-slate-800">{building.clearHeightM ?? '—'} m</dd>
+          </div>
+        </dl>
         <p className="mt-2 text-xs font-medium text-slate-700">
-          Bruta: {formatAreaM2(building.totalGrossM2)} · Rentable: {formatAreaM2(building.netRentableM2)} · Renta: {formatUsdM2(building.askingRentUsdM2)} · {building.availabilityState}
+          Bruta: {formatAreaM2(building.totalGrossM2)} · Rentable: {formatAreaM2(building.netRentableM2)} · {building.availabilityState}
           {building.hasGas ? ' · Gas' : ''}{building.powerKva ? ` · ${building.powerKva} kVA` : ''}
         </p>
         {!isStaff && (
           <p className="mt-1 text-[11px] text-slate-500">Nombre del ocupante y negociaciones ocultos por política de visibilidad (backend).</p>
         )}
+        <p className="mt-2 text-[11px] font-medium text-slate-500">
+          Para editar superficies, renta o specs usa «Editar en wizard».
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Field label="Comentario">
             <input className={inputCls} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Motivo del cambio" />

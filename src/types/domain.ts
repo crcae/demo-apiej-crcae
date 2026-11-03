@@ -170,3 +170,25 @@ export interface MarketKpis {
   avgRentMxn: number | null;
   corridors: CorridorStat[];
 }
+
+/** Public/demo industrial listing for Inventario Industrial. */
+export type ListingDealType = 'RENT' | 'SALE';
+export type ListingPropertyType = 'WAREHOUSE' | 'LAND' | 'BUILDING';
+
+export interface IndustrialListing {
+  id: string;
+  code: string;
+  title: string;
+  dealType: ListingDealType;
+  propertyType: ListingPropertyType;
+  priceLabel: string;
+  areaM2: number;
+  municipality: string;
+  corridor: string;
+  listedBy: string;
+  imageUrl: string;
+  lat: number;
+  lng: number;
+  buildingClass?: BuildingClass;
+  availabilityState: AvailabilityState;
+}
