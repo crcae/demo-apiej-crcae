@@ -394,6 +394,25 @@ function PlatformApp(): React.JSX.Element {
         visibleCounts={`${visParks.length} parques · ${visBuildings.length} naves · ${visLands.length} terrenos`}
       />
 
+      <div className="border-b border-slate-200/80 bg-white">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-2 md:px-6">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="rounded-full bg-[#0E1A3D] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
+              {VIEW_LABEL[view]}
+            </span>
+            <span className="font-medium text-slate-500">{actor.orgName}</span>
+            <span className="hidden text-slate-300 sm:inline">·</span>
+            <span className="hidden font-semibold text-slate-600 sm:inline">{persona.label}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+            <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            En vivo
+            <span className="hidden text-slate-300 md:inline">·</span>
+            <span className="hidden md:inline">{visParks.length} parques · {visBuildings.length} naves · {visLands.length} terrenos</span>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6">
         {tourStep !== null && (
           <TourDock
@@ -520,7 +539,7 @@ function PlatformApp(): React.JSX.Element {
         )}
 
         {toast !== null && (
-          <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10">
+          <div className="fixed bottom-6 left-1/2 z-[110] w-max max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[#0E1A3D] px-4 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-[#4A6CFF]/40">
             {toast}
           </div>
         )}

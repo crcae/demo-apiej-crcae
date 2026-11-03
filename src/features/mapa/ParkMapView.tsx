@@ -6,6 +6,7 @@ import {
 } from '../../mock/corridors.mock.js';
 import type { Building, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { Card, CardBody, StatusBadge } from '../../components/ui/primitives.js';
 
 function rasterStyle(
@@ -67,9 +68,9 @@ function zoneBounds(c: CorridorDef): maplibregl.LngLatBounds {
 }
 
 function pinStyle(status: Park['status']): { background: string; glyph: string; fg: string } {
-  if (status === 'VERIFIED') return { background: '#b3d700', glyph: '✓', fg: '#0F172A' };
-  if (status === 'PENDING_VALIDATION') return { background: '#00a2ff', glyph: '●', fg: '#ffffff' };
-  return { background: '#94a3b8', glyph: '📍', fg: '#ffffff' };
+  if (status === 'VERIFIED') return { background: '#10B981', glyph: '✓', fg: '#ffffff' };
+  if (status === 'PENDING_VALIDATION') return { background: '#FF7A00', glyph: '●', fg: '#ffffff' };
+  return { background: '#94a3b8', glyph: '·', fg: '#ffffff' };
 }
 
 type Basemap = 'mapa' | 'satelite';
@@ -486,33 +487,31 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
   }
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const selCls = 'w-full rounded-xl border border-white/60 bg-[#E0E5EC] px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none';
+  const selCls = 'w-full rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none';
 
   return (
     <div>
-      {/* Header */}
-      <p className="text-xs font-medium text-slate-500">Panel / Mapa GIS</p>
-      <div className="mt-1 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">Mapa del mercado industrial</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">Explora corredores, parques y espacios disponibles.</p>
-        </div>
-        <span className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">
-          {parks.length} Parques <span className="font-medium text-slate-400">|</span> {buildings.length} Naves <span className="font-medium text-slate-400">|</span> {lands.length} Terrenos
-          <span className="ml-2 rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-            Datos de ejemplo
+      <PageHeader
+        section="Mapa GIS"
+        title="Mapa del mercado industrial"
+        subtitle="Explora corredores, parques y espacios disponibles."
+        actions={(
+          <span className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">
+            {parks.length} Parques <span className="font-medium text-slate-400">|</span> {buildings.length} Naves <span className="font-medium text-slate-400">|</span> {lands.length} Terrenos
+            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+              Datos de ejemplo
+            </span>
           </span>
-        </span>
-      </div>
+        )}
+      />
 
-      {/* Filter toolbar */}
-      <div className="mb-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#EBF0F5] p-2.5 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+      <div className="mb-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="🔍 Buscar parque o ubicación"
-          className="w-56 rounded-xl border border-white/50 bg-[#E0E5EC] px-3.5 py-1.5 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500 focus:outline-none"
+          className="w-56 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500 focus:outline-none"
         />
         <select className={`${selCls} w-auto`} value={fCorridor} onChange={(e) => setFCorridor(e.target.value)}>
           <option value="ALL">Corredor: Todos</option>
@@ -539,7 +538,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
         </div>
         <button
           type="button" onClick={clearFilters}
-          className="ml-auto cursor-pointer px-2 text-xs font-bold text-[#00a2ff] transition hover:underline"
+          className="ml-auto cursor-pointer px-2 text-xs font-bold text-[#4A6CFF] transition hover:underline"
         >
           Limpiar
         </button>
@@ -575,8 +574,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
             <div ref={wrapRef} className="relative">
               <div ref={mapRef} className="h-[calc(100vh-140px)] min-h-[640px] w-full overflow-hidden rounded-3xl ring-1 ring-slate-200" />
               {(emptyRole || emptyFilters) && (
-                <div className="absolute inset-0 z-[5] flex items-center justify-center rounded-3xl bg-[#EBF0F5]/85 p-6">
-                  <div className="max-w-sm rounded-2xl border border-white/60 bg-[#EBF0F5] p-5 text-center shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+                <div className="absolute inset-0 z-[5] flex items-center justify-center rounded-3xl bg-white/85 p-6">
+                  <div className="max-w-sm rounded-2xl border border-slate-200/80 bg-white p-5 text-center shadow-sm">
                     <p className="text-sm font-extrabold text-slate-900">
                       {emptyRole ? 'Sin parques visibles para tu rol' : 'Ningún parque coincide con los filtros'}
                     </p>
@@ -589,7 +588,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                       <button
                         type="button"
                         onClick={clearFilters}
-                        className="mt-3 rounded-xl bg-[#00a2ff] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
+                        className="mt-3 rounded-xl bg-[#4A6CFF] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
                       >
                         Restablecer filtros
                       </button>
@@ -599,15 +598,15 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
               )}
               {tileState === 'loading' && (
                 <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2">
-                  <div className="flex items-center gap-2 rounded-full border border-white/60 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00a2ff]/20 border-t-[#00a2ff]" />
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-2 shadow-sm">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#4A6CFF]/20 border-t-[#4A6CFF]" />
                     <p className="text-[11px] font-bold text-slate-700">Cargando tiles del mapa…</p>
                   </div>
                 </div>
               )}
               {tileState === 'error' && (
                 <div className="absolute left-1/2 top-3 z-10 w-max max-w-[92%] -translate-x-1/2">
-                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-amber-500/40 bg-[#EBF0F5] px-4 py-2 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-amber-500/40 bg-white px-4 py-2 shadow-sm">
                     <p className="text-[11px] font-bold text-slate-700">Mapa base sin respuesta — pines y ficha siguen activos.</p>
                     <button
                       type="button"
@@ -626,14 +625,14 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 </div>
               )}
               {/* Top-left mode switch */}
-              <div className="absolute left-3 top-3 flex gap-1 rounded-full bg-[#E2E8F0] p-1 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
+              <div className="absolute left-3 top-3 flex gap-1 rounded-full bg-[#E2E8F0] p-1 ">
                 {(['mapa', 'satelite'] as Basemap[]).map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setBasemap(m)}
                     className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-all duration-200 ${
-                      basemap === m ? 'bg-[#00a2ff] text-white shadow-sm' : 'text-slate-600 hover:bg-[#EBF0F5]'
+                      basemap === m ? 'bg-[#4A6CFF] text-white shadow-sm' : 'text-slate-600 hover:bg-white'
                     }`}
                   >
                     {m === 'mapa' ? 'Mapa' : 'Satélite'}
@@ -646,7 +645,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   type="button"
                   onClick={() => setShowCorr((s) => !s)}
                   title="Mostrar / ocultar polígonos de corredores"
-                  className="flex items-center gap-2 rounded-full border border-white/60 bg-[#EBF0F5] px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                  className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm"
                 >
                   Corredores
                   <span className={`relative h-4 w-8 rounded-full transition ${showCorr ? 'bg-[#10b981]' : 'bg-slate-300'}`}>
@@ -657,25 +656,25 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 <div className="flex flex-col gap-1.5">
                   <button
                     type="button" onClick={() => mapObj.current?.zoomIn()} title="Acercar"
-                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-base font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-base font-black text-slate-700 shadow-sm"
                   >
                     +
                   </button>
                   <button
                     type="button" onClick={() => mapObj.current?.zoomOut()} title="Alejar"
-                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-base font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-base font-black text-slate-700 shadow-sm"
                   >
                     −
                   </button>
                   <button
                     type="button" onClick={toggleFullscreen} title="Pantalla completa"
-                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-xs font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-xs font-black text-slate-700 shadow-sm"
                   >
                     ⤢
                   </button>
                   <button
                     type="button" onClick={fitAll} title="Encuadrar resultados"
-                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/60 bg-[#EBF0F5] text-xs font-black text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-xs font-black text-slate-700 shadow-sm"
                   >
                     [ ]
                   </button>
@@ -709,8 +708,8 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-slate-500">
               <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span>Corredores APIEJ · clic para resaltar</span>
-                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Verificado</span>
-                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#00a2ff]" /> En revisión</span>
+                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#10B981]" /> Verificado</span>
+                <span className="flex items-center gap-1.5 font-bold text-slate-700"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF7A00]" /> En revisión</span>
               </span>
               <span className="font-medium">{filtered.length} pines · {matchedByFilters.length} coincidencias</span>
             </div>
@@ -724,7 +723,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     className={`flex items-center gap-2 rounded-xl border p-2 text-left text-xs font-bold transition ${
                       selectedId === p.id
                         ? 'border-[#0F172A] bg-[#0F172A] text-white'
-                        : 'border-white/60 bg-[#EBF0F5] text-slate-700 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]'
+                        : 'border-slate-200/80 bg-white text-slate-700 shadow-sm'
                     }`}
                   >
                     <i
@@ -740,7 +739,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
         </Card>
 
         {/* Sidebar */}
-        <div className="flex flex-col justify-between rounded-3xl bg-[#EBF0F5] p-5 shadow-[8px_8px_18px_#c5ccd6,-8px_-8px_18px_#ffffff]">
+        <div className="flex flex-col justify-between rounded-3xl bg-white p-5 shadow-sm">
           <div>
             <div className="mb-3 flex gap-4 border-b border-slate-200">
               {(['corredores', 'ficha'] as SideTab[]).map((t) => (
@@ -750,7 +749,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   onClick={() => setTab(t)}
                   className={`pb-2 text-sm font-bold transition ${
                     tab === t
-                      ? 'border-b-2 border-[#00a2ff] text-[#0F172A]'
+                      ? 'border-b-2 border-[#4A6CFF] text-[#0F172A]'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -787,7 +786,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                           className={`flex w-full items-center gap-2.5 rounded-2xl border p-2.5 text-left transition ${
                             active
                               ? 'border-transparent shadow-md ring-2 ring-offset-1'
-                              : 'border-white/60 bg-[#EBF0F5] shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] hover:brightness-[0.98]'
+                              : 'border-slate-200/80 bg-white shadow-sm hover:brightness-[0.98]'
                           }`}
                           style={active ? { background: `${z.color}18`, boxShadow: `0 0 0 2px ${z.color}` } : undefined}
                         >
@@ -831,10 +830,10 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   <StatusBadge status={selected.status} />
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="font-medium text-slate-700">Total</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.totalLandM2)}</dd></div>
-                  <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="font-medium text-slate-700">Disponible (naves)</dt><dd className="font-bold text-[#65A30D]">{formatAreaM2(selAvailable)}</dd></div>
-                  <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="font-medium text-slate-700">Desarrollado</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.developedM2)}</dd></div>
-                  <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]"><dt className="font-medium text-slate-700">Reserva</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.reserveM2)}</dd></div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm"><dt className="font-medium text-slate-700">Total</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.totalLandM2)}</dd></div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm"><dt className="font-medium text-slate-700">Disponible (naves)</dt><dd className="font-bold text-[#65A30D]">{formatAreaM2(selAvailable)}</dd></div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm"><dt className="font-medium text-slate-700">Desarrollado</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.developedM2)}</dd></div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm"><dt className="font-medium text-slate-700">Reserva</dt><dd className="font-bold text-[#0F172A]">{formatAreaM2(selected.reserveM2)}</dd></div>
                 </dl>
                 <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-700">Infraestructura</h4>
                 <ul className="grid grid-cols-2 gap-1 text-xs">
@@ -848,7 +847,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                       ['Seguridad 24/7', selected.infrastructure.security === true],
                     ] as Array<[string, boolean]>
                   ).map(([label, ok]) => (
-                    <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-[#84CC16]/15 text-[#65A30D]' : 'bg-[#E0E5EC] text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]'}`}>
+                    <li key={label} className={`rounded-lg px-2 py-1 font-semibold ${ok === true ? 'bg-[#84CC16]/15 text-[#65A30D]' : 'bg-slate-50 text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]'}`}>
                       {ok === true ? '✓ ' : '✕ '}{label}
                     </li>
                   ))}
@@ -856,7 +855,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                 <h4 className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-700">Naves ({selBuildings.length})</h4>
                 <ul className="space-y-1.5">
                   {selBuildings.map((b) => (
-                    <li key={b.id} className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 text-xs shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]">
+                    <li key={b.id} className="rounded-xl border border-slate-200/80 bg-white p-2 text-xs shadow-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800">{b.code} · Clase {b.buildingClass}</span>
                         <span className="font-medium text-slate-600">{b.availabilityState}</span>
@@ -878,7 +877,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                     <h4 className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wider text-slate-700">Terrenos ({selLands.length})</h4>
                     <ul className="space-y-1.5">
                       {selLands.map((l) => (
-                        <li key={l.id} className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2 text-xs font-medium text-slate-700 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]">
+                        <li key={l.id} className="rounded-xl border border-slate-200/80 bg-white p-2 text-xs font-medium text-slate-700 shadow-sm">
                           <span className="font-bold text-[#0F172A]">{l.name}</span> · {formatAreaM2(l.sellableM2)} vendibles
                         </li>
                       ))}
@@ -886,7 +885,7 @@ export function ParkMapView({ parks, buildings, lands, isStaff }: Props): React.
                   </>
                 )}
                 {!isStaff && (
-                  <p className="mt-3 rounded-xl bg-[#E0E5EC] p-2 text-[11px] font-medium text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">Razones sociales reales ocultas por política de visibilidad.</p>
+                  <p className="mt-3 rounded-xl bg-slate-50 p-2 text-[11px] font-medium text-slate-600 shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]">Razones sociales reales ocultas por política de visibilidad.</p>
                 )}
               </div>
             )}

@@ -9,6 +9,7 @@ import {
 import { QUARTER_MONTHS } from '../../mock/market.mock.js';
 import type { MarketKpis, Period } from '../../types/domain.js';
 import type { FxSource } from '../../services/fxService.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { formatAreaM2, formatMxnM2, formatPct, formatUsdM2 } from '../../utils/formatters.js';
 
 export type Currency = 'USD' | 'MXN';
@@ -33,7 +34,7 @@ interface Props {
 }
 
 const FX_BADGE: Record<FxSource, { title: string; label: string; dot: string }> = {
-  live: { title: 'Tipo de cambio EN VIVO (mercado abierto)', label: 'LIVE', dot: 'animate-pulse bg-[#ff8d00]' },
+  live: { title: 'Tipo de cambio EN VIVO (mercado abierto)', label: 'LIVE', dot: 'animate-pulse bg-[#FF7A00]' },
   frozen: { title: 'Tipo de cambio Banxico congelado del periodo', label: 'PERIODO', dot: 'bg-slate-400' },
   fallback: { title: 'Usando tipo de cambio de respaldo (17.35)', label: 'FALLBACK', dot: 'bg-amber-500' },
   error: {
@@ -44,11 +45,11 @@ const FX_BADGE: Record<FxSource, { title: string; label: string; dot: string }> 
 };
 
 const card =
-  'rounded-3xl bg-[#EBF0F5] p-5 shadow-[8px_8px_18px_#c5ccd6,-8px_-8px_18px_#ffffff] transition-all duration-300 hover:shadow-[10px_10px_22px_#c5ccd6,-10px_-10px_22px_#ffffff]';
+  'rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md';
 
 function IconCapsule({ icon: Icon, cls }: { icon: LucideIcon; cls: string }): React.JSX.Element {
   return (
-    <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 shadow-sm ${cls}`}>
+    <span className={`flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 shadow-sm ${cls}`}>
       <Icon size={18} strokeWidth={2.25} />
     </span>
   );
@@ -64,8 +65,8 @@ function DonutRing({ pct }: { pct: number }): React.JSX.Element {
       <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
         <defs>
           <linearGradient id="vacRing" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ff8d00" />
-            <stop offset="100%" stopColor="#FACC15" />
+            <stop offset="0%" stopColor="#FF7A00" />
+            <stop offset="100%" stopColor="#4A6CFF" />
           </linearGradient>
         </defs>
         <circle cx="64" cy="64" r={r} fill="none" stroke="#E2E8F0" strokeWidth="13" />
@@ -76,7 +77,7 @@ function DonutRing({ pct }: { pct: number }): React.JSX.Element {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xl font-black tracking-tight text-slate-950">{formatPct(clamped)}</span>
+        <span className="text-xl font-black tracking-tight text-[#0E1A3D]">{formatPct(clamped)}</span>
       </div>
     </div>
   );
@@ -131,52 +132,48 @@ export function Dashboard({
 
   return (
     <div>
-      {/* Header */}
-      <p className="text-xs font-medium text-slate-500">Panel / Dashboard</p>
-      <div className="mt-1 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">
-            Panorama del mercado industrial
-          </h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">
-            Inventario, disponibilidad y actividad en Jalisco.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onRevalidateFx(false)}
-          className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm transition hover:opacity-90 ${
-            fxSource === 'error'
-              ? 'border-red-300 bg-red-50 text-red-800'
-              : 'border-slate-300 bg-white/80 text-slate-800'
-          }`}
-          title={`${FX_BADGE[fxSource].title} · Clic para revalidar`}
-        >
-          USD/MXN {fx.toFixed(fxSource === 'live' ? 4 : 2)}
-          <i className={`inline-block h-2 w-2 rounded-full ${FX_BADGE[fxSource].dot}`} />
-          {FX_BADGE[fxSource].label}
-        </button>
-        {fxSource === 'error' && (
-          <span className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-900 shadow-sm">
-            Usando tipo de cambio del periodo (congelado)
-          </span>
+      <PageHeader
+        section="Dashboard"
+        title="Panorama del mercado industrial"
+        subtitle="Inventario, disponibilidad y actividad en Jalisco."
+        actions={(
+          <>
+            <button
+              type="button"
+              onClick={() => onRevalidateFx(false)}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm transition hover:opacity-90 ${
+                fxSource === 'error'
+                  ? 'border-red-300 bg-red-50 text-red-800'
+                  : 'border-slate-200 bg-white text-slate-800'
+              }`}
+              title={`${FX_BADGE[fxSource].title} · Clic para revalidar`}
+            >
+              USD/MXN {fx.toFixed(fxSource === 'live' ? 4 : 2)}
+              <i className={`inline-block h-2 w-2 rounded-full ${FX_BADGE[fxSource].dot}`} />
+              {FX_BADGE[fxSource].label}
+            </button>
+            {fxSource === 'error' && (
+              <span className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-900 shadow-sm">
+                Usando tipo de cambio del periodo (congelado)
+              </span>
+            )}
+            <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">
+              Trimestre actual: Q4 2026
+            </span>
+            <span className="rounded-xl border border-[#4A6CFF]/25 bg-[#4A6CFF]/10 px-3 py-1.5 text-xs font-bold text-[#4A6CFF]">
+              Hoy: 1 oct 2026
+            </span>
+          </>
         )}
-        <span className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
-          Trimestre actual: Q4 2026
-        </span>
-        <span className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-800 shadow-sm">
-          Hoy: 1 oct 2026
-        </span>
-      </div>
+      />
       {readOnly && (
         <p className="mt-2 inline-block rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
           Solo lectura · datos verificados y anonimizados
         </p>
       )}
 
-      {/* Toolbar — single Tour button lives here */}
-      <div className="mb-6 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/50 bg-slate-100/50 p-2">
-        <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-white/60 bg-[#EBF0F5] p-1 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
+      <div className="mb-6 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-50 p-1 ring-1 ring-slate-200/80">
           <span className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
             Periodo consultado
           </span>
@@ -186,10 +183,10 @@ export function Dashboard({
               type="button"
               onClick={() => onPeriod(p.id)}
               title={p.isClosed ? 'Trimestre cerrado: cifras inmutables para auditoría' : 'Trimestre en vivo: se recalcula al aprobar propiedades'}
-              className={`px-4 py-1.5 text-xs transition-all duration-200 ${
+              className={`px-4 py-1.5 text-xs transition ${
                 activePeriodId === p.id
-                  ? 'rounded-xl bg-[#ff9100] font-black text-white shadow-sm'
-                  : 'cursor-pointer rounded-xl font-semibold text-slate-600 hover:text-slate-900'
+                  ? 'rounded-lg bg-[#FF7A00] font-black text-white shadow-sm'
+                  : 'cursor-pointer rounded-lg font-semibold text-slate-600 hover:bg-white hover:text-slate-900'
               }`}
             >
               Q{p.quarter} {p.year}
@@ -201,7 +198,7 @@ export function Dashboard({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div
-            className="flex items-center gap-1 rounded-2xl border border-white/60 bg-[#EBF0F5] p-1 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]"
+            className="flex items-center gap-1 rounded-xl bg-slate-50 p-1 ring-1 ring-slate-200/80"
             title="Precios en dólares o pesos (tipo de cambio del periodo)"
           >
             {(['USD', 'MXN'] as Currency[]).map((c) => (
@@ -209,10 +206,10 @@ export function Dashboard({
                 key={c}
                 type="button"
                 onClick={() => onCurrency(c)}
-                className={`px-3.5 py-1.5 text-xs transition-all duration-200 ${
+                className={`px-3.5 py-1.5 text-xs transition ${
                   currency === c
-                    ? 'rounded-xl bg-[#00a2ff] font-bold text-white shadow-sm'
-                    : 'cursor-pointer rounded-xl font-medium text-slate-600 hover:text-slate-900'
+                    ? 'rounded-lg bg-[#4A6CFF] font-bold text-white shadow-sm'
+                    : 'cursor-pointer rounded-lg font-medium text-slate-600 hover:bg-white hover:text-slate-900'
                 }`}
               >
                 {c}
@@ -223,7 +220,7 @@ export function Dashboard({
             type="button"
             onClick={onOpenTour}
             title="Inicia el tour guiado de 5 pasos"
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-300/80 bg-white px-4 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition-all hover:bg-slate-50"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
           >
             <Presentation size={13} /> Tour guiado
           </button>
@@ -231,7 +228,7 @@ export function Dashboard({
             type="button"
             onClick={onExport}
             title="Vista previa del Reporte Trimestral oficial + descarga PDF"
-            className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#b3d700] px-4 py-1.5 text-xs font-black text-slate-950 shadow-md transition-all hover:bg-[#a2c400]"
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#0E1A3D] px-4 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-[#152552]"
           >
             <FileDown size={13} /> Exportar PDF
           </button>
@@ -243,18 +240,18 @@ export function Dashboard({
         <div className={`${card} col-span-12 sm:col-span-6 xl:col-span-4`}>
           <div className="mb-2"><IconCapsule icon={Building2} cls="bg-emerald-500/15 text-emerald-600" /></div>
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Superficie industrial total</p>
-          <p className="mt-1 text-3xl font-black tracking-tight text-slate-950">{formatAreaM2(kpis.totalInventoryM2)}</p>
+          <p className="mt-1 text-3xl font-black tracking-tight text-[#0E1A3D]">{formatAreaM2(kpis.totalInventoryM2)}</p>
           <p className="mb-3 mt-0.5 text-xs font-medium text-slate-500">Espacio construido registrado en los parques.</p>
           <div
-            className="flex h-3 overflow-hidden rounded-full bg-[#E2E8F0] shadow-[inset_2px_2px_4px_#c5ccd6,inset_-2px_-2px_4px_#ffffff]"
+            className="flex h-3 overflow-hidden rounded-full bg-slate-100"
             title={`Ocupado ${formatPct(occupiedPct)} · Disponible ${formatPct(kpis.vacancyPct)}`}
           >
-            <div className="h-full bg-[#10b981] transition-all duration-700" style={{ width: `${occupiedPct.toFixed(1)}%` }} />
-            <div className="h-full bg-[#f59e0b] transition-all duration-700" style={{ width: `${kpis.vacancyPct.toFixed(1)}%` }} />
+            <div className="h-full bg-[#10B981] transition-all duration-700" style={{ width: `${occupiedPct.toFixed(1)}%` }} />
+            <div className="h-full bg-[#FF7A00] transition-all duration-700" style={{ width: `${kpis.vacancyPct.toFixed(1)}%` }} />
           </div>
           <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-slate-500">
-            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Ocupado {formatPct(occupiedPct)}</span>
-            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#ff8d00]" /> Disponible {formatPct(kpis.vacancyPct)}</span>
+            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#10B981]" /> Ocupado {formatPct(occupiedPct)}</span>
+            <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF7A00]" /> Disponible {formatPct(kpis.vacancyPct)}</span>
             <span className="rounded-md bg-slate-200/70 px-2 py-0.5">Inventario</span>
           </div>
         </div>
@@ -264,7 +261,7 @@ export function Dashboard({
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Espacio disponible para renta</p>
           <div className="mt-1 flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-3xl font-black tracking-tight text-slate-950">{formatPct(kpis.vacancyPct)}</p>
+              <p className="text-3xl font-black tracking-tight text-[#0E1A3D]">{formatPct(kpis.vacancyPct)}</p>
               <p className="mt-1 text-xs font-medium text-slate-500">Parte del inventario disponible para renta.</p>
             </div>
             <DonutRing pct={kpis.vacancyPct} />
@@ -277,7 +274,7 @@ export function Dashboard({
         <div className={`${card} col-span-12 xl:col-span-4`}>
           <div className="mb-2"><IconCapsule icon={DollarSign} cls="bg-blue-500/15 text-blue-600" /></div>
           <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Renta promedio por m²</p>
-          <p className="mt-1 text-3xl font-black tracking-tight text-slate-950">{rent}</p>
+          <p className="mt-1 text-3xl font-black tracking-tight text-[#0E1A3D]">{rent}</p>
           <p className="mb-3 mt-1 text-xs font-medium text-slate-500">Precio solicitado, ponderado por superficie rentable.</p>
           <span className="inline-block rounded-md bg-slate-200/60 px-2.5 py-1 text-[10px] font-medium text-slate-600">
             Moneda seleccionada: {currency}
@@ -295,7 +292,7 @@ export function Dashboard({
               <p className="mt-1 text-xs font-medium text-slate-500">Aumento del espacio ocupado respecto al trimestre anterior.</p>
             </div>
           </div>
-          <p className="shrink-0 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">+{formatAreaM2(kpis.netAbsorptionM2)}</p>
+          <p className="shrink-0 text-2xl font-black tracking-tight text-[#0E1A3D] md:text-3xl">+{formatAreaM2(kpis.netAbsorptionM2)}</p>
         </div>
         <div className={`${card} flex items-center justify-between gap-4`}>
           <div className="flex items-center">
@@ -305,7 +302,7 @@ export function Dashboard({
               <p className="mt-1 text-xs font-medium text-slate-500">Superficie de operaciones registradas en el trimestre.</p>
             </div>
           </div>
-          <p className="shrink-0 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">{formatAreaM2(kpis.grossAbsorptionM2)}</p>
+          <p className="shrink-0 text-2xl font-black tracking-tight text-[#0E1A3D] md:text-3xl">{formatAreaM2(kpis.grossAbsorptionM2)}</p>
         </div>
       </div>
 
@@ -319,7 +316,7 @@ export function Dashboard({
             </div>
             <div className="flex gap-4 text-[11px] font-bold text-slate-700">
               <span>⚫ Superficie total</span>
-              <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#b3d700]" /> Disponible</span>
+              <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#10B981]" /> Disponible</span>
             </div>
           </div>
           <div className="mt-2 h-80 w-full">
@@ -335,8 +332,8 @@ export function Dashboard({
                   tickFormatter={(v: number) => `${Math.round(v / 1000)}k`}
                 />
                 <Tooltip content={<ChartTip />} cursor={{ fill: '#E2E8F0', opacity: 0.6 }} />
-                <Bar dataKey="Total" fill="#0F172A" radius={[10, 10, 10, 10]} maxBarSize={38} />
-                <Bar dataKey="Disponible" fill="#b3d700" radius={[10, 10, 10, 10]} maxBarSize={38} />
+                <Bar dataKey="Total" fill="#0E1A3D" radius={[10, 10, 10, 10]} maxBarSize={38} />
+                <Bar dataKey="Disponible" fill="#10B981" radius={[10, 10, 10, 10]} maxBarSize={38} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -344,24 +341,24 @@ export function Dashboard({
 
         <div className={`${card} col-span-1 flex flex-col justify-between lg:col-span-4`}>
           <div>
-            <h3 className="mb-4 text-base font-black text-slate-950">Claves del trimestre</h3>
+            <h3 className="mb-4 text-base font-black text-[#0E1A3D]">Claves del trimestre</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
-                <IconCapsule icon={PieChart} cls="bg-[#ff8d00]/15 text-[#ff8d00]" />
+                <IconCapsule icon={PieChart} cls="bg-[#FF7A00]/15 text-[#FF7A00]" />
                 <p className="text-xs font-medium text-slate-500">
-                  <b className="mr-1 font-extrabold text-slate-950">{formatPct(kpis.vacancyPct)}</b>disponible para renta
+                  <b className="mr-1 font-extrabold text-[#0E1A3D]">{formatPct(kpis.vacancyPct)}</b>disponible para renta
                 </p>
               </li>
               <li className="flex items-center gap-3">
                 <IconCapsule icon={TrendingUp} cls="bg-emerald-500/15 text-emerald-600" />
                 <p className="text-xs font-medium text-slate-500">
-                  <b className="mr-1 font-extrabold text-slate-950">{formatAreaM2(kpis.netAbsorptionM2)}</b>de aumento neto
+                  <b className="mr-1 font-extrabold text-[#0E1A3D]">{formatAreaM2(kpis.netAbsorptionM2)}</b>de aumento neto
                 </p>
               </li>
               <li className="flex items-center gap-3">
                 <IconCapsule icon={FileText} cls="bg-blue-500/15 text-blue-600" />
                 <p className="text-xs font-medium text-slate-500">
-                  <b className="mr-1 font-extrabold text-slate-950">{pendingCount}</b>registros por validar
+                  <b className="mr-1 font-extrabold text-[#0E1A3D]">{pendingCount}</b>registros por validar
                 </p>
               </li>
             </ul>
@@ -369,7 +366,7 @@ export function Dashboard({
           <button
             type="button"
             onClick={onGoValidation}
-            className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#b3d700] py-3 text-xs font-black text-slate-950 shadow-md transition-all hover:bg-[#a2c400]"
+            className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#4A6CFF] py-3 text-xs font-black text-white shadow-sm transition hover:bg-[#3b5aef]"
           >
             Revisar pendientes ➔
           </button>

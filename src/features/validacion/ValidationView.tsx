@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageHeader } from '../../components/PageHeader.js';
 import type { AuditEntry, Building, EntityStatus, Land, Park } from '../../types/domain.js';
 import { formatAreaM2, formatUsdM2 } from '../../utils/formatters.js';
 
@@ -28,7 +29,7 @@ const KIND_LABEL: Record<Kind, string> = { PARK: 'PARQUE', BUILDING: 'NAVE', LAN
 
 function statusBadge(status: EntityStatus): { label: string; cls: string } {
   if (status === 'PENDING_VALIDATION') return { label: 'Pendiente', cls: 'bg-amber-500/15 text-amber-800' };
-  if (status === 'CHANGES_REQUESTED') return { label: 'Con observaciones', cls: 'bg-[#00a2ff]/15 text-[#0284c7]' };
+  if (status === 'CHANGES_REQUESTED') return { label: 'Con observaciones', cls: 'bg-[#4A6CFF]/15 text-[#0284c7]' };
   if (status === 'VERIFIED') return { label: 'Verificado', cls: 'bg-emerald-500/15 text-emerald-800' };
   if (status === 'REJECTED') return { label: 'Rechazado', cls: 'bg-red-500/15 text-red-700' };
   return { label: 'Borrador', cls: 'bg-slate-200 text-slate-700' };
@@ -112,7 +113,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
 
   function Field({ label, value }: { label: string; value: string }): React.JSX.Element {
     return (
-      <div className="rounded-xl border border-white/60 bg-[#EBF0F5] p-2.5 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff]">
+      <div className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
         <p className="text-[11px] font-semibold text-slate-600">{label}</p>
         <p className="mt-0.5 text-xs font-bold text-[#0F172A]">{value}</p>
       </div>
@@ -121,18 +122,16 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
 
   return (
     <div>
-      <p className="text-xs font-medium text-slate-500">Panel / Validación</p>
-      <div className="mt-1 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Bandeja de revisión</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">
-            Elige un registro → revisa datos → Aprobar, Pedir cambios o Rechazar.
-          </p>
-        </div>
-        <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700">
-          {counts.pendientes} pendientes
-        </span>
-      </div>
+      <PageHeader
+        section="Validación"
+        title="Bandeja de revisión"
+        subtitle="Elige un registro → revisa datos → Aprobar, Pedir cambios o Rechazar."
+        actions={(
+          <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+            {counts.pendientes} pendientes
+          </span>
+        )}
+      />
 
       {/* Filter tabs */}
       <div className="mb-4 mt-4 flex flex-wrap gap-2">
@@ -147,10 +146,10 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
               key={t}
               type="button"
               onClick={() => { setTab(t); setSelectedId(null); }}
-              className={`px-4 py-2 text-xs transition-all duration-200 ${
+              className={`px-4 py-2 text-xs transition ${
                 active
-                  ? 'rounded-xl border border-blue-500/20 bg-blue-500/10 font-bold text-blue-700 shadow-sm'
-                  : 'rounded-xl bg-[#EBF0F5] font-semibold text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] hover:text-slate-950'
+                  ? 'rounded-xl border border-[#4A6CFF]/30 bg-[#4A6CFF]/10 font-bold text-[#4A6CFF] shadow-sm'
+                  : 'rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 shadow-sm hover:text-[#0E1A3D]'
               }`}
             >
               {label}
@@ -169,12 +168,12 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔍 Buscar registro"
-            className="mb-2.5 w-full rounded-xl border border-white/50 bg-[#E0E5EC] px-3.5 py-2 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500"
+            className="mb-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500"
           />
           <select
             value={fKind}
             onChange={(e) => setFKind(e.target.value)}
-            className="mb-3 w-full rounded-xl border border-white/50 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none"
+            className="mb-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
           >
             <option value="ALL">Tipo: Todos</option>
             <option value="PARK">Parques</option>
@@ -190,11 +189,11 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                   key={`${it.kind}-${it.id}`}
                   type="button"
                   onClick={() => pick(it.id)}
-                  className={`w-full rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-left transition-all duration-200 ${
+                  className={`w-full rounded-[2rem] border border-slate-200/80 bg-white p-4 text-left transition-all duration-200 ${
                     active
-                      ? 'border-l-4 border-l-[#00a2ff] bg-blue-500/5 shadow-[inset_4px_4px_8px_#c5ccd6,inset_-4px_-4px_8px_#ffffff]'
-                      : 'shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff] hover:shadow-[8px_8px_16px_#c5ccd6,-8px_-8px_16px_#ffffff]'
-                  } ${spotlight && idx === 0 && tab === 'pendientes' ? 'animate-pulse ring-4 ring-emerald-500 ring-offset-2 ring-offset-[#EBF0F5]' : ''}`}
+                      ? 'border-l-4 border-l-[#4A6CFF] bg-blue-500/5 shadow-inner'
+                      : 'shadow-sm hover:shadow-sm'
+                  } ${spotlight && idx === 0 && tab === 'pendientes' ? 'animate-pulse ring-4 ring-emerald-500 ring-offset-2 ring-offset-white' : ''}`}
                 >
                   <span className="block text-[10px] font-bold tracking-wider text-slate-500">{KIND_LABEL[it.kind]}</span>
                   <span className="mt-0.5 block text-sm font-extrabold text-[#0F172A]">{it.title}</span>
@@ -205,7 +204,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
               );
             })}
             {list.length === 0 && (
-              <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-xs font-medium text-slate-600 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+              <p className="rounded-[2rem] border border-slate-200/80 bg-white p-4 text-xs font-medium text-slate-600 shadow-sm">
                 Sin registros en esta bandeja.
               </p>
             )}
@@ -216,7 +215,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
         </div>
 
         {/* Detail */}
-        <div className="rounded-3xl border border-white/60 bg-[#EBF0F5] p-6 shadow-[10px_10px_24px_#c5ccd6,-10px_-10px_24px_#ffffff]">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
           {selected === null && (
             <p className="text-sm font-medium text-slate-600">Selecciona un registro para revisarlo.</p>
           )}
@@ -227,7 +226,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Revisar {selected.kind === 'PARK' ? 'parque' : selected.kind === 'BUILDING' ? 'nave' : 'terreno'}
                   </p>
-                  <h3 className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{selected.title}</h3>
+                  <h3 className="mt-0.5 text-2xl font-black tracking-tight text-[#0E1A3D]">{selected.title}</h3>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${badge.cls}`}>{badge.label}</span>
               </div>
@@ -240,7 +239,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                     onClick={() => setDetailTab(t)}
                     className={`pb-2 text-xs transition ${
                       detailTab === t
-                        ? 'border-b-2 border-[#00a2ff] font-bold text-blue-600'
+                        ? 'border-b-2 border-[#4A6CFF] font-bold text-blue-600'
                         : 'font-semibold text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -296,7 +295,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                     <p className="text-xs font-medium text-slate-600">Sin movimientos registrados para este registro.</p>
                   )}
                   {history.map((h) => (
-                    <div key={h.id} className="rounded-2xl border border-white/60 bg-[#EBF0F5] p-3 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+                    <div key={h.id} className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm">
                       <p className="text-xs font-bold text-[#0F172A]">{h.actorName} · {h.action}</p>
                       <p className="text-xs font-medium text-slate-600">{h.detail}</p>
                     </div>
@@ -311,7 +310,7 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                     value={notes}
                     onChange={(e) => { setNotes(e.target.value); setNotesError(null); }}
                     placeholder="Indica qué debe corregirse o el motivo del rechazo."
-                    className="min-h-[80px] w-full rounded-2xl border border-white/50 bg-[#E0E5EC] p-3 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500"
+                    className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500"
                   />
                   {notesError !== null ? (
                     <p className="mt-1.5 text-xs font-bold text-red-600">{notesError}</p>
@@ -347,12 +346,12 @@ export function ValidationView({ parks, buildings, lands, audit, actorOrgId, isS
                 </>
               )}
               {isStaff && selected.status !== 'PENDING_VALIDATION' && (
-                <p className="mt-6 rounded-2xl bg-[#E0E5EC] p-3 text-xs font-medium text-slate-600 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
+                <p className="mt-6 rounded-2xl bg-slate-50 p-3 text-xs font-medium text-slate-600 ">
                   Este registro ya fue resuelto ({statusBadge(selected.status).label}). Solo los pendientes admiten decisión.
                 </p>
               )}
               {!isStaff && (
-                <p className="mt-6 rounded-2xl bg-[#E0E5EC] p-3 text-xs font-medium text-slate-600 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff]">
+                <p className="mt-6 rounded-2xl bg-slate-50 p-3 text-xs font-medium text-slate-600 ">
                   Vista de operador: sigues el estado de tus envíos. Solo APIEJ Staff puede decidir.
                 </p>
               )}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PageHeader } from '../../components/PageHeader.js';
 import type { Building, EntityStatus, Land, Park } from '../../types/domain.js';
 import { firstZodMessage, formatZodErrors, parkDraftSchema } from '../../schemas/capture.js';
 import { formatAreaM2 } from '../../utils/formatters.js';
@@ -25,7 +26,7 @@ const MUNICIPIOS = ['El Salto', 'Tlajomulco', 'Zapopan', 'Tlaquepaque', 'Tonalá
 function statusBadge(status: Park['status']): { label: string; cls: string } {
   if (status === 'VERIFIED') return { label: 'Verificado', cls: 'bg-emerald-500/15 text-emerald-800' };
   if (status === 'PENDING_VALIDATION') return { label: 'En revisión', cls: 'bg-amber-500/15 text-amber-800' };
-  if (status === 'CHANGES_REQUESTED') return { label: 'Con observaciones', cls: 'bg-[#00a2ff]/15 text-[#0284c7]' };
+  if (status === 'CHANGES_REQUESTED') return { label: 'Con observaciones', cls: 'bg-[#4A6CFF]/15 text-[#0284c7]' };
   return { label: 'Borrador', cls: 'bg-slate-200 text-slate-700' };
 }
 
@@ -115,19 +116,15 @@ export function CaptureView({
   }
 
   const sel = statusBadge(selected?.status ?? 'DRAFT');
-  const inputCls = 'w-full rounded-xl border border-white/60 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none';
+  const inputCls = 'w-full rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none';
 
   return (
     <div>
-      <p className="text-xs font-medium text-slate-500">Panel / Captura</p>
-      <div className="mt-1 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Captura sencilla</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">
-            1) Completa datos · 2) Guarda borrador · 3) Envía a revisión. Las naves se editan con el wizard.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        section="Captura"
+        title="Captura sencilla"
+        subtitle="1) Completa datos · 2) Guarda borrador · 3) Envía a revisión. Las naves se editan con el wizard."
+      />
 
       <div className="mb-4 mt-4 flex flex-wrap items-center gap-2">
         <div className="flex gap-1.5">
@@ -142,10 +139,10 @@ export function CaptureView({
                 key={c}
                 type="button"
                 onClick={() => setCat(c)}
-                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                className={`px-3 py-1.5 text-xs transition ${
                   active
-                    ? 'rounded-xl border border-blue-500/20 bg-blue-500/10 font-bold text-blue-700'
-                    : 'rounded-xl bg-[#EBF0F5] font-semibold text-slate-700 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff] hover:text-slate-950'
+                    ? 'rounded-xl border border-[#4A6CFF]/30 bg-[#4A6CFF]/10 font-bold text-[#4A6CFF]'
+                    : 'rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 shadow-sm hover:text-[#0E1A3D]'
                 }`}
               >
                 {label}
@@ -157,7 +154,7 @@ export function CaptureView({
           <button
             type="button"
             onClick={onCreatePark}
-            className="ml-auto flex cursor-pointer items-center gap-2 rounded-xl bg-[#b3d700] px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all hover:bg-[#a2c400]"
+            className="ml-auto flex cursor-pointer items-center gap-2 rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3b5aef]"
           >
             + Nuevo parque
           </button>
@@ -166,7 +163,7 @@ export function CaptureView({
           <button
             type="button"
             onClick={onNewBuilding}
-            className="ml-auto rounded-xl bg-[#b3d700] px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all hover:bg-[#a2c400]"
+            className="ml-auto rounded-xl bg-[#4A6CFF] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3b5aef]"
           >
             + Nueva nave (wizard)
           </button>
@@ -182,12 +179,12 @@ export function CaptureView({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="🔍 Buscar parque"
-              className="mb-2.5 w-full rounded-xl border border-white/50 bg-[#E0E5EC] px-3.5 py-2 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500"
+              className="mb-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500"
             />
             <select
               value={fStatus}
               onChange={(e) => setFStatus(e.target.value)}
-              className="mb-3 w-full rounded-xl border border-white/50 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none"
+              className="mb-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
             >
               <option value="ALL">Estado: Todos</option>
               <option value="VERIFIED">Verificado</option>
@@ -205,8 +202,8 @@ export function CaptureView({
                     onClick={() => setSelectedId(p.id)}
                     className={`w-full rounded-[2rem] border p-4 text-left transition-all duration-200 ${
                       active
-                        ? 'border-[#00a2ff]/40 bg-[#E2E8F0] shadow-[inset_4px_4px_8px_#c5ccd6,inset_-4px_-4px_8px_#ffffff]'
-                        : 'border-white/60 bg-[#EBF0F5] shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff] hover:shadow-[8px_8px_16px_#c5ccd6,-8px_-8px_16px_#ffffff]'
+                        ? 'border-[#4A6CFF]/40 bg-[#E2E8F0] shadow-inner'
+                        : 'border-slate-200/80 bg-white shadow-sm hover:shadow-sm'
                     }`}
                   >
                     <span className="block text-sm font-extrabold text-[#0F172A]">{p.name}</span>
@@ -220,7 +217,7 @@ export function CaptureView({
                 );
               })}
               {list.length === 0 && (
-                <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-xs font-medium text-slate-600 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+                <p className="rounded-[2rem] border border-slate-200/80 bg-white p-4 text-xs font-medium text-slate-600 shadow-sm">
                   Sin resultados para tu organización (aislamiento por tenant).
                 </p>
               )}
@@ -229,7 +226,7 @@ export function CaptureView({
           </div>
 
           {/* Edit form */}
-          <div className="rounded-3xl border border-white/60 bg-[#EBF0F5] p-6 shadow-[10px_10px_24px_#c5ccd6,-10px_-10px_24px_#ffffff]">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
             {selected === null && (
               <p className="text-sm font-medium text-slate-600">Selecciona un parque para editarlo.</p>
             )}
@@ -238,7 +235,7 @@ export function CaptureView({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Editar parque</p>
-                    <h3 className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{name || selected.name}</h3>
+                    <h3 className="mt-0.5 text-2xl font-black tracking-tight text-[#0E1A3D]">{name || selected.name}</h3>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${sel.cls}`}>{sel.label}</span>
@@ -299,7 +296,7 @@ export function CaptureView({
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Describe los cambios o lo que debe revisar el equipo."
-                  className="min-h-[90px] w-full rounded-2xl border border-white/50 bg-[#E0E5EC] p-3 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500"
+                  className="min-h-[90px] w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500"
                 />
 
                 <p className="mt-6 text-xs font-medium text-slate-400">* Campos obligatorios</p>
@@ -309,7 +306,7 @@ export function CaptureView({
                 <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                   <button
                     type="button" onClick={reset}
-                    className="mr-4 cursor-pointer text-xs font-bold text-[#00a2ff] transition hover:underline"
+                    className="mr-4 cursor-pointer text-xs font-bold text-[#4A6CFF] transition hover:underline"
                   >
                     Cancelar
                   </button>
@@ -320,7 +317,7 @@ export function CaptureView({
                       if (draft === null) return;
                       onUpdatePark(selected.id, draft);
                     }}
-                    className="mr-3 rounded-xl bg-[#EBF0F5] px-4 py-2.5 text-xs font-bold text-blue-600 shadow-[3px_3px_8px_#c5ccd6,-3px_-3px_8px_#ffffff] transition-all hover:text-blue-800"
+                    className="mr-3 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-blue-600 shadow-sm transition-all hover:text-blue-800"
                   >
                     Guardar
                   </button>
@@ -357,7 +354,7 @@ export function CaptureView({
           {buildings.map((b) => (
             <div key={b.id} className="space-y-1">
               <BuildingForm building={b} isStaff={isStaff} onSubmitForReview={(id, to, c) => onSubmitReview('BUILDING', id, to, c)} />
-              <button type="button" onClick={() => onEditBuilding(b)} className="text-xs font-bold text-[#00a2ff] hover:underline">
+              <button type="button" onClick={() => onEditBuilding(b)} className="text-xs font-bold text-[#4A6CFF] hover:underline">
                 Editar en wizard →
               </button>
             </div>

@@ -50,9 +50,9 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-[90] text-white shadow-lg">
+    <header className="sticky top-0 z-[90] text-white shadow-lg shadow-black/20">
       <div className="border-b border-white/10 bg-[#0E1A3D]">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-2.5 md:px-6">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 md:px-6">
           <button
             type="button"
             onClick={() => pickView('dashboard')}
@@ -61,7 +61,7 @@ export function AppHeader({
           >
             <img src="/apiej_logo.png" alt="APIEJ" className="h-9 w-auto object-contain brightness-0 invert" />
             <span className="hidden border-l border-white/20 pl-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55 sm:block">
-              Sistema
+              Jalisco Intelligence
             </span>
           </button>
 
@@ -95,12 +95,13 @@ export function AppHeader({
             })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2">
-            <div className="hidden text-right xl:block">
+          <div className="ml-auto flex items-center gap-2.5">
+            <div className="hidden text-right lg:block">
               <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-300/90">En vivo</p>
-              <p className="max-w-[140px] truncate text-[10px] font-medium text-white/50" title={`${orgName} · ${visibleCounts}`}>
+              <p className="max-w-[180px] truncate text-[10px] font-medium text-white/55" title={`${orgName} · ${visibleCounts}`}>
                 {orgName}
               </p>
+              <p className="hidden max-w-[180px] truncate text-[9px] text-white/40 xl:block">{visibleCounts}</p>
             </div>
 
             <div className="relative">

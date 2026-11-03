@@ -25,7 +25,7 @@ type ExploreStep =
 
 const STEPS: ExploreStep[] = [
   { n: '01', icon: Warehouse, accent: '#FF7A00', title: 'Ver propiedades', desc: 'Catálogo público en renta o venta', kind: 'public' },
-  { n: '02', icon: Map, accent: '#10B981', title: 'Entrar al sistema', desc: 'Mapa GIS, captura y validación', kind: 'system', view: 'mapa' },
+  { n: '02', icon: Map, accent: '#10B981', title: 'Mapa industrial', desc: 'Parques y corredores de Jalisco', kind: 'system', view: 'mapa' },
   { n: '03', icon: BarChart3, accent: '#4A6CFF', title: 'Indicadores y reportes', desc: 'Análisis trimestral (requiere sesión)', kind: 'system', view: 'reportes' },
 ];
 
@@ -90,12 +90,12 @@ export function LandingPage(): React.JSX.Element {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-clip bg-[#0B1228] text-slate-950">
+    <div className="relative min-h-screen w-full overflow-x-clip bg-transparent text-slate-950">
       <RoadNetworkBg />
 
-      {/* Header — navy + tricolor brand bar */}
-      <header className="sticky top-0 z-50 text-white">
-        <div className="border-b border-white/10 bg-[#0E1A3D]/92 backdrop-blur-md">
+      {/* Header — solid navy, public CTAs only */}
+      <header className="sticky top-0 z-50 text-white shadow-lg shadow-black/20">
+        <div className="border-b border-white/10 bg-[#0E1A3D]">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5 md:px-8">
             <button type="button" onClick={scrollTop} title="Inicio APIEJ" className="flex items-center">
               <img src="/apiej_logo.png" alt="APIEJ" className="h-9 w-auto object-contain brightness-0 invert" />
@@ -105,7 +105,6 @@ export function LandingPage(): React.JSX.Element {
             </button>
             <nav className="hidden items-center gap-7 text-xs font-bold text-white/80 md:flex">
               <button type="button" onClick={() => navigate('/propiedades')} className="transition hover:text-[#4A6CFF]">Ver propiedades</button>
-              <button type="button" onClick={() => go(navigate, 'mapa')} className="transition hover:text-[#4A6CFF]">Entrar al sistema</button>
               <a href="#cifras" className="transition hover:text-[#4A6CFF]">Indicadores</a>
               <a href="#institucional" className="transition hover:text-[#4A6CFF]">Conoce APIEJ</a>
             </nav>
@@ -142,8 +141,18 @@ export function LandingPage(): React.JSX.Element {
           onError={() => { if (heroSrc !== HERO_FALLBACK) setHeroSrc(HERO_FALLBACK); }}
           className="animate-kenburns absolute inset-0 h-full w-full object-cover object-center"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0E1A3D]/95 via-[#0E1A3D]/70 to-[#0E1A3D]/25" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1228] via-transparent to-[#0E1A3D]/40" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0E1A3D]/96 via-[#0E1A3D]/72 to-[#0E1A3D]/30" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1228] via-transparent to-[#0E1A3D]/45" />
+        {!reduce && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="animate-hero-sheen absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+          </div>
+        )}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 flex h-1" aria-hidden="true">
+          <span className="flex-1 bg-[#FF7A00]/80" />
+          <span className="flex-1 bg-[#10B981]/80" />
+          <span className="flex-1 bg-[#4A6CFF]/80" />
+        </div>
 
         <div className="relative z-20 mx-auto flex min-h-[min(92vh,820px)] w-full max-w-6xl flex-col justify-center px-5 py-16 md:px-8">
           <motion.div
@@ -183,10 +192,12 @@ export function LandingPage(): React.JSX.Element {
               </motion.button>
               <button
                 type="button"
-                onClick={() => go(navigate, 'mapa')}
+                onClick={() => {
+                  document.getElementById('cifras')?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="rounded-2xl border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
               >
-                Explorar mapa GIS
+                Ver indicadores
               </button>
             </div>
             <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#0E1A3D]/55 px-3.5 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur">
@@ -197,25 +208,26 @@ export function LandingPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Content on lighter surface */}
-      <div className="relative z-10 bg-[#F8FAFC]">
-        <div className="mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
+      {/* Content — translucent so roads stay faintly visible */}
+      <div className="relative z-10 bg-[#F8FAFC]/88 backdrop-blur-[2px]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0B1228]/40 to-transparent" />
+        <div className="relative mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
           <section id="cifras" className="scroll-mt-28">
             <motion.div {...fadeUp} className="mb-6 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A6CFF]">Mercado en vivo</p>
                 <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">El mercado en cifras</h2>
               </div>
-              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
                 <i className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 T1 · Ilustrativo · LIVE
               </span>
             </motion.div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {[
-                { value: formatAreaM2(inv), label: 'Inventario industrial', color: '#FF7A00' },
-                { value: formatPct(vac), label: 'Tasa de disponibilidad', color: '#10B981' },
-                { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', color: '#4A6CFF' },
+                { value: formatAreaM2(inv), label: 'Inventario industrial', color: '#FF7A00', glow: 'rgba(255,122,0,0.18)' },
+                { value: formatPct(vac), label: 'Tasa de disponibilidad', color: '#10B981', glow: 'rgba(16,185,129,0.18)' },
+                { value: `$${rent.toFixed(2)}`, label: 'Renta promedio · USD/m²', color: '#4A6CFF', glow: 'rgba(74,108,255,0.18)' },
               ].map((s, i) => (
                 <motion.div
                   key={s.label}
@@ -223,12 +235,17 @@ export function LandingPage(): React.JSX.Element {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
-                  whileHover={reduce ? undefined : { y: -4 }}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-md"
-                  style={{ borderTopWidth: 4, borderTopColor: s.color }}
+                  whileHover={reduce ? undefined : { y: -6 }}
+                  className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-6 shadow-lg backdrop-blur-sm"
+                  style={{ boxShadow: `0 12px 40px -16px ${s.glow}, 0 1px 0 rgba(255,255,255,0.8) inset` }}
                 >
-                  <p className="text-3xl font-black tabular-nums text-[#0E1A3D]">{s.value}</p>
-                  <p className="mt-2 text-xs font-bold text-slate-500">{s.label}</p>
+                  <div className="absolute inset-x-0 top-0 h-1" style={{ background: s.color }} />
+                  <div
+                    className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
+                    style={{ background: s.glow }}
+                  />
+                  <p className="relative font-display text-3xl font-black tabular-nums text-[#0E1A3D] md:text-4xl">{s.value}</p>
+                  <p className="relative mt-2 text-xs font-bold text-slate-500">{s.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -254,22 +271,26 @@ export function LandingPage(): React.JSX.Element {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.5 }}
                   whileHover={reduce ? undefined : { y: -6 }}
-                  className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-md transition"
-                  style={{ borderBottomWidth: 4, borderBottomColor: c.accent }}
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-6 text-left shadow-lg backdrop-blur-sm transition"
                 >
-                  <span className="absolute right-5 top-5 text-2xl font-black text-slate-200">{c.n}</span>
+                  <div className="absolute inset-x-0 bottom-0 h-1" style={{ background: c.accent }} />
+                  <div
+                    className="pointer-events-none absolute -left-8 top-0 h-28 w-28 rounded-full opacity-60 blur-2xl transition group-hover:opacity-100"
+                    style={{ background: `${c.accent}33` }}
+                  />
+                  <span className="absolute right-5 top-5 text-2xl font-black text-slate-200/90">{c.n}</span>
                   <span
-                    className="flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-110"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-110"
                     style={{ background: `${c.accent}18`, color: c.accent }}
                   >
                     <c.icon size={20} />
                   </span>
-                  <p className="mt-5 text-lg font-extrabold text-[#0E1A3D]">{c.title}</p>
-                  <p className="mt-1 text-xs text-slate-500">{c.desc}</p>
-                  <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <p className="relative mt-5 text-lg font-extrabold text-[#0E1A3D]">{c.title}</p>
+                  <p className="relative mt-1 text-xs text-slate-500">{c.desc}</p>
+                  <p className="relative mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     {c.kind === 'public' ? 'Sin sesión' : 'Requiere sesión'}
                   </p>
-                  <p className="mt-3 text-sm font-bold transition group-hover:translate-x-1" style={{ color: c.accent }}>➔</p>
+                  <p className="relative mt-3 text-sm font-bold transition group-hover:translate-x-1" style={{ color: c.accent }}>➔</p>
                 </motion.button>
               ))}
             </div>
@@ -282,10 +303,10 @@ export function LandingPage(): React.JSX.Element {
                 <h2 className="font-display mt-1 text-3xl font-black text-[#0E1A3D]">Nuestros colaboradores</h2>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => nudge(-1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-white">
+                <button type="button" onClick={() => nudge(-1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-slate-600 hover:bg-white">
                   <ChevronLeft size={15} />
                 </button>
-                <button type="button" onClick={() => nudge(1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-white">
+                <button type="button" onClick={() => nudge(1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-slate-600 hover:bg-white">
                   <ChevronRight size={15} />
                 </button>
               </div>
@@ -296,14 +317,24 @@ export function LandingPage(): React.JSX.Element {
               onMouseLeave={() => setStripPaused(false)}
               className="mt-5 flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-4 md:overflow-visible [&::-webkit-scrollbar]:hidden"
             >
-              {DEVS.map((d) => (
-                <div
+              {DEVS.map((d, i) => (
+                <motion.div
                   key={d.name}
-                  className="w-52 shrink-0 rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#4A6CFF]/40 hover:shadow-lg md:w-auto"
+                  initial={reduce ? false : { opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06 }}
+                  whileHover={reduce ? undefined : { y: -4 }}
+                  className="w-52 shrink-0 rounded-2xl border border-white/80 bg-white/90 px-6 py-8 text-center shadow-md backdrop-blur-sm transition hover:border-[#4A6CFF]/35 hover:shadow-lg md:w-auto"
                 >
-                  <p className="text-2xl font-black tracking-tight text-[#0E1A3D]">{d.name}</p>
+                  <div className="mx-auto mb-3 flex h-1 w-10 gap-0.5 overflow-hidden rounded-full">
+                    <span className="flex-1 bg-[#FF7A00]" />
+                    <span className="flex-1 bg-[#10B981]" />
+                    <span className="flex-1 bg-[#4A6CFF]" />
+                  </div>
+                  <p className="font-display text-2xl font-black tracking-tight text-[#0E1A3D]">{d.name}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">{d.sub}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
@@ -311,10 +342,11 @@ export function LandingPage(): React.JSX.Element {
           <section id="institucional" className="mt-16 scroll-mt-28">
             <motion.div
               {...fadeUp}
-              className="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E1A3D] via-[#152552] to-[#1a2d5c] p-8 text-white shadow-xl md:grid-cols-12 md:p-12"
+              className="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E1A3D] via-[#152552] to-[#1a2d5c] p-8 text-white shadow-xl ring-1 ring-white/10 md:grid-cols-12 md:p-12"
             >
-              <div className="pointer-events-none absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#4A6CFF]/20 blur-3xl" />
-              <div className="pointer-events-none absolute bottom-0 left-10 h-40 w-40 rounded-full bg-[#FF7A00]/15 blur-3xl" />
+              <div className="pointer-events-none absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#4A6CFF]/25 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-0 left-10 h-40 w-40 rounded-full bg-[#FF7A00]/20 blur-3xl" />
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#10B981]/10 blur-3xl" />
               <div className="relative rounded-2xl border border-white/15 bg-white/10 p-8 text-center backdrop-blur md:col-span-5">
                 <div className="mb-4 flex justify-center gap-1.5" aria-hidden="true">
                   <i className="h-2 w-2 rounded-full bg-[#FF7A00]" />
@@ -341,14 +373,14 @@ export function LandingPage(): React.JSX.Element {
                   onClick={() => go(navigate)}
                   className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-[#4A6CFF] px-7 py-3 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#3b5aef]"
                 >
-                  Entrar a la plataforma ↗
+                  Iniciar sesión ↗
                 </button>
               </div>
             </motion.div>
           </section>
         </div>
 
-        <footer className="border-t border-slate-200 bg-white/90">
+        <footer className="border-t border-slate-200/80 bg-white/80 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 text-xs text-slate-400 md:px-8">
             <span className="font-bold text-[#0E1A3D]/70">APIEJ · Observatorio Industrial</span>
             <span>Demo presentación · 2026</span>

@@ -3,6 +3,7 @@ import { Download, FileText, Loader2 } from 'lucide-react';
 import type { Currency } from '../dashboard/Dashboard.js';
 import type { MarketKpis, Period } from '../../types/domain.js';
 import { mockMarketReportDemo, type ParkCapitalBlock } from '../../mock/marketReport.mock.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { downloadElementAsPdf } from '../../services/pdfReport.js';
 import { formatAreaM2, formatMxnM2, formatPct, formatUsdM2 } from '../../utils/formatters.js';
 
@@ -70,24 +71,22 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
 
   return (
     <div>
-      <p className="text-xs font-medium text-slate-500">Sistema / Reportes</p>
-      <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0E1A3D]">Reportes de mercado</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">
-            Dos plantillas descargables · look editorial para socios APIEJ.
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => { void handleDownload(); }}
-          className="flex items-center gap-2 rounded-xl bg-[#0E1A3D] px-4 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-[#152552] disabled:opacity-60"
-        >
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          Descargar PDF activo
-        </button>
-      </div>
+      <PageHeader
+        section="Reportes"
+        title="Reportes de mercado"
+        subtitle="Dos plantillas descargables · look editorial para socios APIEJ."
+        actions={(
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => { void handleDownload(); }}
+            className="flex items-center gap-2 rounded-xl bg-[#0E1A3D] px-4 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-[#152552] disabled:opacity-60"
+          >
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            Descargar PDF activo
+          </button>
+        )}
+      />
       {err !== null && <p className="mt-3 rounded-xl bg-red-50 p-2 text-xs font-bold text-red-600">{err}</p>}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

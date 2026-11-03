@@ -1,39 +1,48 @@
 import type { ReactNode } from 'react';
 
-export function Card({ children }: { children: ReactNode }): React.JSX.Element {
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }): React.JSX.Element {
   return (
-    <div className="rounded-[2rem] border border-white/50 bg-[#EBF0F5] shadow-[8px_8px_16px_#c8d0e0,-8px_-8px_16px_#ffffff] transition-all duration-300 hover:shadow-[12px_12px_20px_#c8d0e0,-12px_-12px_20px_#ffffff]">{children}</div>
+    <div className={`rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md ${className}`}>
+      {children}
+    </div>
   );
 }
 
 export function CardBody({ children }: { children: ReactNode }): React.JSX.Element {
-  return <div className="p-6">{children}</div>;
+  return <div className="p-5 md:p-6">{children}</div>;
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }): React.JSX.Element {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</span>
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
       {children}
     </label>
   );
 }
 
 export const inputCls =
-  'w-full rounded-xl border border-white/60 bg-[#E0E5EC] px-3 py-2 text-sm text-slate-900 shadow-[inset_3px_3px_6px_#c8d0e0,inset_-3px_-3px_6px_#ffffff] outline-none transition focus:shadow-[inset_2px_2px_4px_#c8d0e0,inset_-2px_-2px_4px_#ffffff]';
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-[#4A6CFF] focus:bg-white focus:ring-2 focus:ring-[#4A6CFF]/20';
+
+const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
+  VERIFIED: { label: 'Verificado', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+  AVAILABLE: { label: 'Disponible', cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+  PENDING_VALIDATION: { label: 'En validación', cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
+  RESERVED: { label: 'Reservado', cls: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' },
+  CHANGES_REQUESTED: { label: 'Con observaciones', cls: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' },
+  REJECTED: { label: 'Rechazado', cls: 'bg-red-50 text-red-700 ring-1 ring-red-200' },
+  DRAFT: { label: 'Borrador', cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200' },
+  LEASED: { label: 'Arrendado', cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200' },
+  SOLD: { label: 'Vendido', cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200' },
+  UNDER_CONSTRUCTION: { label: 'En construcción', cls: 'bg-[#4A6CFF]/10 text-[#4A6CFF] ring-1 ring-[#4A6CFF]/25' },
+  OFF_MARKET: { label: 'Fuera de mercado', cls: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' },
+};
 
 export function StatusBadge({ status }: { status: string }): React.JSX.Element {
-  const color =
-    status === 'VERIFIED'
-      ? 'bg-[#84CC16]/15 text-[#65A30D]'
-      : status === 'PENDING_VALIDATION'
-        ? 'bg-[#2563EB]/10 text-[#2563EB]'
-        : status === 'CHANGES_REQUESTED' || status === 'REJECTED'
-          ? 'bg-red-50 text-red-600'
-          : 'bg-slate-100 text-slate-600';
+  const mapped = STATUS_STYLE[status] ?? { label: status, cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200' };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${color}`}>
-      {status}
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${mapped.cls}`}>
+      {mapped.label}
     </span>
   );
 }

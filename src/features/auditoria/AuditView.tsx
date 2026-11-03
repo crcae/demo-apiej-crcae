@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BarChart3, FileText } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader.js';
 import type { AuditEntry } from '../../types/domain.js';
 import { Card, CardBody } from '../../components/ui/primitives.js';
 
@@ -38,7 +39,7 @@ function parseDetail(detail: string): { from: string | null; to: string | null; 
 function badgeFor(action: AuditEntry['action']): { label: string; cls: string } {
   if (action === 'SNAPSHOT_CLOSE') return { label: 'Cierre trimestral', cls: 'bg-emerald-500/15 text-emerald-700' };
   if (action === 'CREATE') return { label: 'Creación', cls: 'bg-slate-200 text-slate-700' };
-  if (action === 'UPDATE') return { label: 'Actualización', cls: 'bg-[#00a2ff]/15 text-[#0284c7]' };
+  if (action === 'UPDATE') return { label: 'Actualización', cls: 'bg-[#4A6CFF]/15 text-[#0284c7]' };
   return { label: 'Cambio de estado', cls: 'bg-blue-500/15 text-blue-700' };
 }
 
@@ -100,34 +101,34 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
 
   return (
     <div>
-      {/* Header */}
-      <p className="text-xs font-medium text-slate-500">Panel / Auditoría</p>
-      <div className="mt-1 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-950">Historial de cambios</h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">Consulta quién realizó cada cambio y cuándo.</p>
-        </div>
-        <span className="mr-2 rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700">
-          Solo lectura
-        </span>
-        <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-          Datos de ejemplo
-        </span>
-      </div>
+      <PageHeader
+        section="Auditoría"
+        title="Historial de cambios"
+        subtitle="Consulta quién realizó cada cambio y cuándo."
+        actions={(
+          <>
+            <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+              Solo lectura
+            </span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+              Datos de ejemplo
+            </span>
+          </>
+        )}
+      />
 
-      {/* Filter toolbar */}
-      <div className="mb-6 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#EBF0F5] p-3 shadow-[4px_4px_10px_#c5ccd6,-4px_-4px_10px_#ffffff]">
+      <div className="mb-6 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔍 Buscar registro o usuario"
-            className="w-64 rounded-xl border border-white/50 bg-[#E0E5EC] px-3.5 py-2 text-xs font-medium text-slate-800 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none placeholder:text-slate-500"
+            className="w-64 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-800 outline-none placeholder:text-slate-500"
           />
           <select
             value={fEvent}
             onChange={(e) => setFEvent(e.target.value)}
-            className="rounded-xl border border-white/50 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
           >
             <option value="ALL">Evento: Todos</option>
             {kinds.map((k) => <option key={k} value={k}>{badgeFor(k).label}</option>)}
@@ -135,7 +136,7 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
           <select
             value={fDate}
             onChange={(e) => setFDate(e.target.value as DateFilter)}
-            className="rounded-xl border border-white/50 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-slate-700 shadow-[inset_3px_3px_6px_#c5ccd6,inset_-3px_-3px_6px_#ffffff] outline-none"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
           >
             <option value="ALL">📅 Todas las fechas</option>
             <option value="7D">Últimos 7 días</option>
@@ -144,7 +145,7 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
         </div>
         <button
           type="button" onClick={clear}
-          className="ml-auto cursor-pointer text-xs font-bold text-[#00a2ff] transition hover:underline"
+          className="ml-auto cursor-pointer text-xs font-bold text-[#4A6CFF] transition hover:underline"
         >
           Limpiar
         </button>
@@ -177,10 +178,10 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
                   key={e.id}
                   type="button"
                   onClick={() => setSelectedId(e.id)}
-                  className={`w-full rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-left transition-all duration-200 ${
+                  className={`w-full rounded-[2rem] border border-slate-200/80 bg-white p-4 text-left transition-all duration-200 ${
                     active
-                      ? 'border-l-4 border-l-[#00a2ff] bg-blue-500/5 shadow-[inset_4px_4px_8px_#c5ccd6,inset_-4px_-4px_8px_#ffffff]'
-                      : 'shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff] hover:shadow-[8px_8px_16px_#c5ccd6,-8px_-8px_16px_#ffffff]'
+                      ? 'border-l-4 border-l-[#4A6CFF] bg-blue-500/5 shadow-inner'
+                      : 'shadow-sm hover:shadow-sm'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -205,7 +206,7 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
               );
             })}
             {list.length === 0 && (
-              <p className="rounded-[2rem] border border-white/60 bg-[#EBF0F5] p-4 text-xs font-medium text-slate-600 shadow-[6px_6px_14px_#c5ccd6,-6px_-6px_14px_#ffffff]">
+              <p className="rounded-[2rem] border border-slate-200/80 bg-white p-4 text-xs font-medium text-slate-600 shadow-sm">
                 Sin eventos para estos filtros.
               </p>
             )}
@@ -214,14 +215,14 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
         </div>
 
         {/* Detail panel */}
-        <div className="h-fit rounded-3xl border border-white/60 bg-[#EBF0F5] p-6 shadow-[10px_10px_24px_#c5ccd6,-10px_-10px_24px_#ffffff] lg:sticky lg:top-6">
+        <div className="h-fit rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm lg:sticky lg:top-6">
           {selected === null && (
             <p className="text-sm font-medium text-slate-600">Selecciona un evento para ver el detalle.</p>
           )}
           {selected !== null && selBadge !== null && selDiff !== null && (
             <>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Detalle del evento</p>
-              <h3 className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{selected.entityLabel}</h3>
+              <h3 className="mt-0.5 text-2xl font-black tracking-tight text-[#0E1A3D]">{selected.entityLabel}</h3>
               <p className="mb-3 mt-0.5 text-sm font-medium text-slate-500">{selDiff.context || selected.entityType}</p>
               <span className={`mb-4 inline-block rounded-full px-3 py-1 text-xs font-bold ${selBadge.cls}`}>
                 {selBadge.label}
@@ -240,7 +241,7 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
               <p className="mb-3 text-xs font-medium text-slate-500">Estado del registro</p>
               {selDiff.from !== null && selDiff.to !== null ? (
                 <>
-                  <div className="rounded-2xl border border-slate-300/40 bg-[#E0E5EC]/60 p-3">
+                  <div className="rounded-2xl border border-slate-300/40 bg-slate-50/60 p-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Antes</p>
                     <p className="mt-0.5 text-sm font-bold text-slate-800">{selDiff.from}</p>
                   </div>
@@ -251,7 +252,7 @@ export function AuditView({ entries, isStaff }: Props): React.JSX.Element {
                   </div>
                 </>
               ) : (
-                <div className="rounded-2xl border border-slate-300/40 bg-[#E0E5EC]/60 p-3">
+                <div className="rounded-2xl border border-slate-300/40 bg-slate-50/60 p-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Registro</p>
                   <p className="mt-0.5 text-sm font-bold text-slate-800">{selected.detail}</p>
                 </div>

@@ -7,7 +7,7 @@ html {
 }
 
 body {
-  background-color: #EBF0F5;
+  background-color: #F8FAFC;
   color: #0F172A;
   font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -56,50 +56,104 @@ body {
 /* Landing: animated road network */
 @keyframes road-dash {
   to {
-    stroke-dashoffset: -280;
+    stroke-dashoffset: -360;
   }
 }
 
 @keyframes road-pulse {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.35;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.45);
+    transform: scale(1.55);
   }
 }
 
-.road-line {
-  stroke-dasharray: 10 16;
-  animation: road-dash 24s linear infinite;
+@keyframes road-wash-shift {
+  0%,
+  100% {
+    background-position: 0% 40%, 100% 20%, 50% 100%;
+  }
+  50% {
+    background-position: 30% 60%, 70% 40%, 40% 80%;
+  }
 }
 
-.road-a { animation-duration: 28s; }
-.road-b { animation-duration: 22s; animation-direction: reverse; }
-.road-c { animation-duration: 30s; }
-.road-d { animation-duration: 26s; animation-direction: reverse; }
-.road-e { animation-duration: 34s; }
-.road-f { animation-duration: 29s; animation-direction: reverse; }
-.road-g { animation-duration: 32s; }
-.road-h { animation-duration: 25s; }
-.road-i { animation-duration: 27s; animation-direction: reverse; }
+@keyframes hero-sheen {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  55% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateX(220%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+.animate-road-wash {
+  background:
+    radial-gradient(ellipse 40% 30% at 20% 30%, rgba(74, 108, 255, 0.16), transparent 70%),
+    radial-gradient(ellipse 35% 28% at 80% 40%, rgba(255, 122, 0, 0.12), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 50% 80%, rgba(16, 185, 129, 0.1), transparent 70%);
+  background-size: 140% 140%, 140% 140%, 140% 140%;
+  animation: road-wash-shift 18s ease-in-out infinite;
+}
+
+.animate-hero-sheen {
+  animation: hero-sheen 9s ease-in-out infinite;
+}
+
+.road-line {
+  stroke-dasharray: 8 14;
+  animation: road-dash 16s linear infinite;
+}
+
+.road-a { animation-duration: 18s; }
+.road-b { animation-duration: 14s; animation-direction: reverse; }
+.road-c { animation-duration: 20s; }
+.road-d { animation-duration: 16s; animation-direction: reverse; }
+.road-e { animation-duration: 22s; }
+.road-f { animation-duration: 17s; animation-direction: reverse; }
+.road-g { animation-duration: 19s; }
+.road-h { animation-duration: 15s; }
+.road-i { animation-duration: 16.5s; animation-direction: reverse; }
+.road-j { animation-duration: 13s; }
+.road-k { animation-duration: 21s; animation-direction: reverse; }
+.road-l { animation-duration: 18.5s; }
 
 .road-node {
   transform-box: fill-box;
   transform-origin: center;
-  animation: road-pulse 3.8s ease-in-out infinite;
+  animation: road-pulse 3.2s ease-in-out infinite;
 }
+.road-n1 { animation-delay: 0s; }
+.road-n2 { animation-delay: 0.35s; }
+.road-n3 { animation-delay: 0.7s; }
+.road-n4 { animation-delay: 1.05s; }
+.road-n5 { animation-delay: 1.4s; }
+.road-n6 { animation-delay: 0.2s; }
+.road-n7 { animation-delay: 0.9s; }
+.road-n8 { animation-delay: 1.2s; }
+.road-n9 { animation-delay: 0.55s; }
 
 .road-pulse-dot {
-  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.65));
+  filter: drop-shadow(0 0 5px rgba(255, 122, 0, 0.55));
 }
 
 @media (prefers-reduced-motion: reduce) {
   .road-line,
-  .road-node {
+  .road-node,
+  .animate-road-wash,
+  .animate-hero-sheen {
     animation: none;
   }
   .road-pulse-dot {
