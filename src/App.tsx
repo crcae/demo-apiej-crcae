@@ -185,8 +185,8 @@ function PlatformApp(): React.JSX.Element {
       return;
     }
     decide(first, 'VERIFIED', 'Aprobado en tour guiado');
-    setTourStep(7);
-    applyTourStep(7);
+    setTourStep(8);
+    applyTourStep(8);
     flash('✓ Aprobada. Q2 recalculado en vivo — Q1 intacto.');
   }
 
@@ -207,26 +207,53 @@ function PlatformApp(): React.JSX.Element {
           flash('Periodo Q2 abierto: los KPIs se recalculan al validar inventario.');
         },
       },
+      showQ1: {
+        label: 'Volver a Q1 congelado',
+        run: () => {
+          setPeriodId('p-2026-q1');
+          flash('Q1 congelado: cifras inmutables para auditoría.');
+        },
+      },
       approveFirst: {
         label: 'Aprobar 1ª pendiente',
         gold: true,
         run: tourApproveFirst,
       },
       openReports: {
-        label: 'Ir a Reportes',
+        label: 'Enfocar Reportes',
         gold: true,
-        run: () => setView('reportes'),
+        run: () => {
+          setView('reportes');
+          flash('Selecciona Ejecutivo u Observatorio PCI/PCP y descarga PDF.');
+        },
       },
       openMap: {
         label: 'Ir al Mapa',
         run: () => setView('mapa'),
       },
+      switchAlpha: {
+        label: 'Rol Dev Alpha',
+        gold: true,
+        run: () => {
+          switchPersona('ALPHA');
+          setView('dashboard');
+          flash('Dev Alpha: solo ves datos de tu organización.');
+        },
+      },
       switchBeta: {
-        label: 'Probar rol Dev Beta',
+        label: 'Rol Dev Beta',
         run: () => {
           switchPersona('BETA');
           setView('dashboard');
-          flash('Rol Dev Beta: ves solo el inventario de tu organización.');
+          flash('Dev Beta: inventario aislado de otra org.');
+        },
+      },
+      switchStaff: {
+        label: 'Volver a Staff',
+        run: () => {
+          switchPersona('STAFF');
+          setView('dashboard');
+          flash('Staff APIEJ: visión completa del mercado.');
         },
       },
       newBuilding: {
@@ -236,6 +263,11 @@ function PlatformApp(): React.JSX.Element {
           setEditing(null);
           setWizardOpen(true);
         },
+      },
+      restartTour: {
+        label: 'Reiniciar tour',
+        gold: true,
+        run: () => startTour(),
       },
     };
     return keys.map((k) => map[k]);
@@ -537,7 +569,7 @@ function PlatformApp(): React.JSX.Element {
           total={TOUR_TOTAL}
           title={activeTour.title}
           text={
-            tourStep === 5
+            tourStep === 6
               ? `${activeTour.text} Pendientes ahora: ${inboxItems.length}.`
               : activeTour.text
           }

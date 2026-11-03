@@ -4,10 +4,10 @@ export function RoadNetworkBg(): React.JSX.Element {
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0 bg-[#0B1228]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_5%,rgba(74,108,255,0.12),transparent_50%),radial-gradient(ellipse_at_85%_25%,rgba(255,122,0,0.09),transparent_45%),radial-gradient(ellipse_at_55%_95%,rgba(16,185,129,0.08),transparent_48%),radial-gradient(ellipse_at_40%_50%,rgba(0,162,255,0.04),transparent_55%)]" />
-      <div className="absolute inset-0 animate-road-wash opacity-35" />
+      <div className="absolute inset-0 animate-road-wash opacity-45" />
 
       <svg
-        className="road-network absolute inset-0 h-full w-full opacity-[0.11]"
+        className="road-network absolute inset-0 h-full w-full opacity-[0.14]"
         viewBox="0 0 1200 800"
         preserveAspectRatio="xMidYMid slice"
       >

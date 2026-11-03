@@ -4,6 +4,7 @@ import {
   BarChart3, Building2, ChevronLeft, ChevronRight, LayoutDashboard, Map, Search, Warehouse,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ContentMotionBg } from '../components/ContentMotionBg.js';
 import { RoadNetworkBg } from '../components/RoadNetworkBg.js';
 import { CORRIDORS } from '../mock/corridors.mock.js';
 import { mockQ1Kpis } from '../mock/market.mock.js';
@@ -112,7 +113,6 @@ export function LandingPage(): React.JSX.Element {
               </span>
             </button>
             <nav className="hidden items-center gap-7 text-xs font-bold text-white/80 md:flex">
-              <button type="button" onClick={() => navigate('/propiedades')} className="transition hover:text-[#4A6CFF]">Ver propiedades</button>
               <a href="#cifras" className="transition hover:text-[#4A6CFF]">Indicadores</a>
               <a href="#cobertura" className="transition hover:text-[#4A6CFF]">Cobertura</a>
               <a href="#institucional" className="transition hover:text-[#4A6CFF]">Conoce APIEJ</a>
@@ -216,10 +216,11 @@ export function LandingPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Opaque content surface — titles stay readable */}
-      <div className="relative z-10 bg-[#F8FAFC]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0B1228]/25 to-transparent" />
-        <div className="relative mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
+      {/* Content with soft motion backdrop — cards stay solid/readable */}
+      <div className="relative z-10 overflow-hidden">
+        <ContentMotionBg />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-20 bg-gradient-to-b from-[#0B1228]/30 to-transparent" />
+        <div className="relative z-[2] mx-auto w-full max-w-6xl px-5 py-14 md:px-8">
           <section id="cifras" className="scroll-mt-28">
             <motion.div {...fadeUp} className="mb-6 flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -438,7 +439,7 @@ export function LandingPage(): React.JSX.Element {
           </section>
         </div>
 
-        <footer className="border-t border-slate-200 bg-white">
+        <footer className="relative z-[2] border-t border-slate-200/80 bg-white/90 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 text-xs text-slate-400 md:px-8">
             <span className="font-bold text-[#0E1A3D]/70">APIEJ · Observatorio Industrial</span>
             <span>2026</span>

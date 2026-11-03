@@ -112,6 +112,57 @@ body {
   animation: hero-sheen 9s ease-in-out infinite;
 }
 
+@keyframes content-orb-drift {
+  0%,
+  100% {
+    background-position: 10% 20%, 90% 30%, 50% 90%;
+  }
+  50% {
+    background-position: 30% 40%, 70% 50%, 40% 70%;
+  }
+}
+
+@keyframes content-road-dash {
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+.animate-content-orbs {
+  background:
+    radial-gradient(ellipse 45% 35% at 15% 15%, rgba(74, 108, 255, 0.1), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 25%, rgba(255, 122, 0, 0.08), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 50% 85%, rgba(16, 185, 129, 0.09), transparent 70%);
+  background-size: 160% 160%, 160% 160%, 160% 160%;
+  animation: content-orb-drift 22s ease-in-out infinite;
+}
+
+.content-road {
+  stroke-dasharray: 6 12;
+  animation: content-road-dash 20s linear infinite;
+}
+.content-road-a { animation-duration: 22s; }
+.content-road-b { animation-duration: 18s; animation-direction: reverse; }
+.content-road-c { animation-duration: 24s; }
+.content-road-d { animation-duration: 20s; animation-direction: reverse; }
+.content-road-e { animation-duration: 26s; }
+.content-road-f { animation-duration: 19s; animation-direction: reverse; }
+.content-road-g { animation-duration: 23s; }
+
+.content-pulse {
+  filter: drop-shadow(0 0 3px rgba(74, 108, 255, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-content-orbs,
+  .content-road {
+    animation: none;
+  }
+  .content-pulse {
+    display: none;
+  }
+}
+
 .road-line {
   stroke-dasharray: 8 14;
   animation: road-dash 16s linear infinite;

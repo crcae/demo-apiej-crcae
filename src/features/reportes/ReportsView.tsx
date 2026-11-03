@@ -49,7 +49,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
   const rent = currency === 'USD' ? formatUsdM2(kpis.avgRentUsd) : formatMxnM2(kpis.avgRentMxn);
   const vacDelta = (live.vacancyPct - frozen.vacancyPct).toFixed(1);
   const label = period?.label ?? '2026-Q2';
-  const demo = mockMarketReportDemo;
+  const report = mockMarketReportDemo;
 
   async function handleDownload(): Promise<void> {
     const el = kind === 'executive' ? execRef.current : obsRef.current;
@@ -59,7 +59,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
     const file =
       kind === 'executive'
         ? `APIEJ-Resumen-Ejecutivo-${label}.pdf`
-        : `APIEJ-Observatorio-Mercado-${demo.periodLabel}.pdf`;
+        : `APIEJ-Observatorio-Mercado-${report.periodLabel}.pdf`;
     try {
       await downloadElementAsPdf(el, file);
     } catch {
@@ -252,15 +252,15 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
                   <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#7DD3FC]">
                     Observatorio APIEJ
                   </p>
-                  <h3 className="mt-2 font-display text-2xl font-black tracking-tight">{demo.title}</h3>
-                  <p className="mt-1 text-sm font-semibold text-white/75">{demo.subtitle}</p>
-                  <p className="mt-3 text-xs font-medium text-white/55">Periodo · {demo.periodLabel} · ZMG</p>
+                  <h3 className="mt-2 font-display text-2xl font-black tracking-tight">{report.title}</h3>
+                  <p className="mt-1 text-sm font-semibold text-white/75">{report.subtitle}</p>
+                  <p className="mt-3 text-xs font-medium text-white/55">Periodo · {report.periodLabel} · ZMG</p>
                 </div>
                 <img src="/apiej_logo.png" alt="" className="h-14 w-auto object-contain brightness-0 invert" />
               </div>
-              <p className="mt-6 text-xs leading-relaxed text-white/70">{demo.coverageNote}</p>
+              <p className="mt-6 text-xs leading-relaxed text-white/70">{report.coverageNote}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {demo.corridorsCovered.map((c) => (
+                {report.corridorsCovered.map((c) => (
                   <span key={c} className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-semibold text-white/85">
                     {c}
                   </span>
@@ -269,14 +269,14 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
             </div>
 
             <div className="px-10 py-8">
-              <CapitalBlock block={demo.pci} accent="#4A6CFF" />
-              <CapitalBlock block={demo.pcp} accent="#10B981" />
+              <CapitalBlock block={report.pci} accent="#4A6CFF" />
+              <CapitalBlock block={report.pcp} accent="#10B981" />
 
               <h4 className="mt-8 text-sm font-black uppercase tracking-wider text-[#0E1A3D]">
                 Comparativa nacional ilustrativa
               </h4>
               <p className="mt-1 text-[11px] font-medium text-slate-500">
-                Comparativa nacional · TC ref. {demo.fxUsdMxn.toFixed(2)} MXN/USD
+                Comparativa nacional · TC ref. {report.fxUsdMxn.toFixed(2)} MXN/USD
               </p>
               <table className="mt-3 w-full overflow-hidden rounded-xl text-sm ring-1 ring-slate-200">
                 <thead>
@@ -288,7 +288,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
                   </tr>
                 </thead>
                 <tbody>
-                  {demo.national.map((r, i) => (
+                  {report.national.map((r, i) => (
                     <tr key={r.market} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       <td className="px-3 py-2 font-bold">{r.market}</td>
                       <td className="px-3 py-2 text-right text-slate-600">{formatAreaM2(r.netAbsorptionM2)}</td>
@@ -302,10 +302,10 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
               <h4 className="mt-8 text-sm font-black uppercase tracking-wider text-[#0E1A3D]">Totales ZMG</h4>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
-                  { k: 'Inventario', v: formatAreaM2(demo.zmgTotals.inventoryM2) },
-                  { k: 'En construcción', v: formatAreaM2(demo.zmgTotals.underConstructionM2) },
-                  { k: 'Disponibilidad', v: formatPct(demo.zmgTotals.availabilityPct) },
-                  { k: 'Renta avg', v: formatUsdM2(demo.zmgTotals.avgRentUsd) },
+                  { k: 'Inventario', v: formatAreaM2(report.zmgTotals.inventoryM2) },
+                  { k: 'En construcción', v: formatAreaM2(report.zmgTotals.underConstructionM2) },
+                  { k: 'Disponibilidad', v: formatPct(report.zmgTotals.availabilityPct) },
+                  { k: 'Renta avg', v: formatUsdM2(report.zmgTotals.avgRentUsd) },
                 ].map((x) => (
                   <div key={x.k} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{x.k}</p>
@@ -316,7 +316,7 @@ export function ReportsView({ periods, live, frozen, currency, fx, generatedBy }
 
               <div className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs leading-relaxed text-amber-950">
                 <p className="font-extrabold">Aviso</p>
-                <p className="mt-1">{demo.disclaimer}</p>
+                <p className="mt-1">{report.disclaimer}</p>
               </div>
 
               <div className="mt-8 flex items-end justify-between border-t border-slate-200 pt-4 text-[10px] text-slate-500">

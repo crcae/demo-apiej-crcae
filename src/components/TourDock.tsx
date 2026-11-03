@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Presentation, X } from 'lucide-react';
 
-export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export interface TourAction {
   label: string;
