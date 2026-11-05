@@ -194,8 +194,12 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
                   <div className="relative min-h-[120px]">
                     <img src={l.imageUrl} alt="" className="h-full min-h-[120px] w-full object-cover" />
                     {l.listedByLogoUrl !== undefined && (
-                      <span className="absolute bottom-2 left-2 rounded-md bg-white/95 p-1 shadow-sm ring-1 ring-slate-200/80">
-                        <img src={l.listedByLogoUrl} alt="" className="h-6 w-auto max-w-[72px] object-contain" />
+                      <span
+                        className={`absolute bottom-2 left-2 rounded-md p-1 shadow-sm ring-1 ring-slate-200/80 ${
+                          l.listedBy === 'ELITE' ? 'bg-[#0E1A3D]' : 'bg-white/95'
+                        }`}
+                      >
+                        <img src={l.listedByLogoUrl} alt="" className="h-6 w-auto max-w-[80px] object-contain" />
                       </span>
                     )}
                   </div>
@@ -211,7 +215,13 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       {l.listedByLogoUrl !== undefined && (
-                        <img src={l.listedByLogoUrl} alt="" className="h-7 w-auto max-w-[88px] rounded object-contain ring-1 ring-slate-100" />
+                        <span
+                          className={`inline-flex items-center rounded-md px-1.5 py-1 ring-1 ring-slate-100 ${
+                            l.listedBy === 'ELITE' ? 'bg-[#0E1A3D]' : 'bg-slate-50'
+                          }`}
+                        >
+                          <img src={l.listedByLogoUrl} alt="" className="h-7 w-auto max-w-[96px] object-contain" />
+                        </span>
                       )}
                       <p className="text-[10px] font-semibold text-slate-400">Listed by {l.listedBy}</p>
                     </div>

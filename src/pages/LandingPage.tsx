@@ -380,9 +380,11 @@ export function LandingPage(): React.JSX.Element {
                 {COLLABORATOR_BRANDS.map((d) => (
                   <div
                     key={d.name}
-                    className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2 shadow-sm"
+                    className={`flex items-center justify-center rounded-xl border border-slate-200/80 px-4 py-2.5 shadow-sm ${
+                      d.darkTile === true ? 'bg-[#0E1A3D]' : 'bg-white'
+                    }`}
                   >
-                    <img src={d.logoUrl} alt={d.name} className="h-8 w-auto max-w-[120px] object-contain" />
+                    <img src={d.logoUrl} alt={d.name} className="h-9 w-auto max-w-[140px] object-contain" />
                   </div>
                 ))}
               </div>
@@ -443,15 +445,23 @@ export function LandingPage(): React.JSX.Element {
                     viewport={{ once: true }}
                     transition={{ delay: Math.min(i, 3) * 0.06, ease: EASE }}
                     whileHover={reduce ? undefined : { y: -3 }}
-                    className="w-52 shrink-0 rounded-2xl border border-slate-200/80 bg-white px-5 py-6 text-center shadow-sm transition hover:border-[#4A6CFF]/30 hover:shadow-md md:w-auto"
+                    className="flex w-56 shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white px-5 py-6 text-center shadow-sm transition hover:border-[#4A6CFF]/30 hover:shadow-md md:w-auto"
                   >
-                    <img
-                      src={d.logoUrl}
-                      alt={d.name}
-                      className="mx-auto h-10 w-auto max-w-[140px] object-contain"
-                    />
-                    <p className="mt-3 font-display text-lg font-black tracking-tight text-[#0E1A3D]">{d.name}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">{d.sub}</p>
+                    <div
+                      className={`flex w-full items-center justify-center rounded-xl px-4 py-4 ${
+                        d.darkTile === true ? 'bg-[#0E1A3D]' : 'bg-slate-50'
+                      }`}
+                    >
+                      <img
+                        src={d.logoUrl}
+                        alt={d.name}
+                        className="h-12 w-auto max-w-[160px] object-contain"
+                      />
+                    </div>
+                    {d.wordmark !== true && (
+                      <p className="mt-3 font-display text-lg font-black tracking-tight text-[#0E1A3D]">{d.name}</p>
+                    )}
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">{d.sub}</p>
                   </motion.div>
                 ))}
               </div>
