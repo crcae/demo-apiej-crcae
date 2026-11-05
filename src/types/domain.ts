@@ -186,6 +186,8 @@ export interface IndustrialListing {
   municipality: string;
   corridor: string;
   listedBy: string;
+  /** Optional developer/park logo URL (public path or CDN). */
+  listedByLogoUrl?: string;
   imageUrl: string;
   lat: number;
   lng: number;

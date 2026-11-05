@@ -1,10 +1,18 @@
 import type { IndustrialListing } from '../types/domain.js';
+import { logoUrlForListedBy } from '../utils/developerLogos.js';
 
 const IMG_A = '/Industrial%20Logistics%20Park%20at%20Sunset.png';
 const IMG_B = '/ChatGPT%20Image%20Oct%206,%202026%20at%2006_46_28%20PM.png';
 
+function withLogo(listing: IndustrialListing): IndustrialListing {
+  return {
+    ...listing,
+    listedByLogoUrl: logoUrlForListedBy(listing.listedBy) ?? listing.listedByLogoUrl,
+  };
+}
+
 /** Demo inventory for Inventario Industrial (lista + mapa). */
-export const mockListings: IndustrialListing[] = [
+const baseListings: IndustrialListing[] = [
   {
     id: 'lst-01', code: 'AP-SU1021', title: 'Nave clase A disponible · Parque El Salto',
     dealType: 'RENT', propertyType: 'WAREHOUSE', priceLabel: '$6.50 USD/m² · RENTA',
@@ -90,3 +98,5 @@ export const mockListings: IndustrialListing[] = [
     imageUrl: IMG_B, lat: 20.505, lng: -103.22, buildingClass: 'A', availabilityState: 'AVAILABLE',
   },
 ];
+
+export const mockListings: IndustrialListing[] = baseListings.map(withLogo);

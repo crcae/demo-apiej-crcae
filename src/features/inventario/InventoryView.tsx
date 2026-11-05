@@ -190,8 +190,15 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
                   active ? 'border-[#4A6CFF] bg-white shadow-md ring-2 ring-[#4A6CFF]/25' : 'border-slate-200 bg-white shadow-sm hover:border-slate-300'
                 }`}
               >
-                <div className="grid grid-cols-[140px_1fr] gap-0 sm:grid-cols-[180px_1fr]">
-                  <img src={l.imageUrl} alt="" className="h-full min-h-[120px] w-full object-cover" />
+                <div className="grid grid-cols-[120px_1fr] gap-0 sm:grid-cols-[180px_1fr]">
+                  <div className="relative min-h-[120px]">
+                    <img src={l.imageUrl} alt="" className="h-full min-h-[120px] w-full object-cover" />
+                    {l.listedByLogoUrl !== undefined && (
+                      <span className="absolute bottom-2 left-2 rounded-md bg-white/95 p-1 shadow-sm ring-1 ring-slate-200/80">
+                        <img src={l.listedByLogoUrl} alt="" className="h-6 w-auto max-w-[72px] object-contain" />
+                      </span>
+                    )}
+                  </div>
                   <div className="p-3.5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{l.code}</p>
                     <p className="mt-0.5 line-clamp-2 text-sm font-extrabold text-[#0E1A3D]">{l.title}</p>
@@ -202,7 +209,12 @@ export function InventoryView({ listings, mode = 'public', onUpdateListing }: Pr
                       {l.municipality} · {l.corridor} · {formatAreaM2(l.areaM2)}
                       {l.buildingClass !== undefined ? ` · Clase ${l.buildingClass}` : ''}
                     </p>
-                    <p className="mt-2 text-[10px] font-semibold text-slate-400">Listed by {l.listedBy}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      {l.listedByLogoUrl !== undefined && (
+                        <img src={l.listedByLogoUrl} alt="" className="h-7 w-auto max-w-[88px] rounded object-contain ring-1 ring-slate-100" />
+                      )}
+                      <p className="text-[10px] font-semibold text-slate-400">Listed by {l.listedBy}</p>
+                    </div>
                   </div>
                 </div>
               </button>

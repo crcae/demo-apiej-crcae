@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none" role="img" aria-label="Developer Alpha">
+  <rect width="200" height="48" rx="8" fill="#0E1A3D"/>
+  <text x="16" y="30" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="14" font-weight="800" fill="#A5B4FC">ALPHA</text>
+  <text x="78" y="30" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" opacity="0.75">Developer</text>
+</svg>

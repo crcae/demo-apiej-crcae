@@ -44,12 +44,15 @@ body {
 }
 
 .animate-kenburns {
+  transform: translateZ(0);
+  will-change: transform;
   animation: apiej-kenburns 26s ease-in-out infinite alternate;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns {
     animation: none;
+    will-change: auto;
   }
 }
 
@@ -109,7 +112,49 @@ body {
 }
 
 .animate-hero-sheen {
+  will-change: transform, opacity;
+  transform: translateZ(0);
   animation: hero-sheen 9s ease-in-out infinite;
+}
+
+@keyframes collaborators-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.collaborators-marquee {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  animation: collaborators-marquee 32s linear infinite;
+  will-change: transform;
+}
+
+.collaborators-marquee:hover,
+.collaborators-marquee.is-paused {
+  animation-play-state: paused;
+}
+
+@media (min-width: 768px) {
+  .collaborators-marquee {
+    animation: none;
+    will-change: auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .animate-road-wash {
+    opacity: 0.28;
+    animation-duration: 28s;
+  }
 }
 
 @keyframes content-orb-drift {
@@ -135,6 +180,7 @@ body {
     radial-gradient(ellipse 50% 35% at 50% 85%, rgba(16, 185, 129, 0.09), transparent 70%);
   background-size: 160% 160%, 160% 160%, 160% 160%;
   animation: content-orb-drift 22s ease-in-out infinite;
+  will-change: background-position;
 }
 
 .content-road {
@@ -155,11 +201,16 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-content-orbs,
-  .content-road {
+  .content-road,
+  .collaborators-marquee {
     animation: none;
   }
   .content-pulse {
     display: none;
+  }
+  .animate-content-orbs,
+  .animate-hero-sheen {
+    will-change: auto;
   }
 }
 

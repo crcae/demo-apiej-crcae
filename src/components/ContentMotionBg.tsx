@@ -1,11 +1,22 @@
+interface ContentMotionBgProps {
+  /** Skip SVG animateMotion dots. */
+  reduceMotion?: boolean;
+  /** Fewer pulses for mobile. */
+  light?: boolean;
+}
+
 /** Soft animated backdrop for landing content below the hero — light, readable. */
-export function ContentMotionBg(): React.JSX.Element {
+export function ContentMotionBg({
+  reduceMotion = false,
+  light = false,
+}: ContentMotionBgProps): React.JSX.Element {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-0 bg-[#F8FAFC]" />
-      <div className="animate-content-orbs absolute inset-0 opacity-90" />
+      {/* Orbs under roads so dashed motion stays visible */}
+      <div className="animate-content-orbs absolute inset-0 opacity-[0.58]" />
       <svg
-        className="content-roads absolute inset-0 h-full w-full opacity-[0.11]"
+        className="content-roads absolute inset-0 h-full w-full opacity-[0.15]"
         viewBox="0 0 1200 900"
         preserveAspectRatio="xMidYMid slice"
       >
@@ -25,18 +36,26 @@ export function ContentMotionBg(): React.JSX.Element {
           <path className="content-road content-road-f" d="M720 -10 C700 180, 760 360, 740 540 S720 740, 780 920" />
           <path className="content-road content-road-g" d="M1040 0 C1000 200, 1080 400, 1040 600 S1020 800, 1100 920" />
         </g>
-        <circle r="2.8" fill="#FF7A00" className="content-pulse">
-          <animateMotion dur="14s" repeatCount="indefinite" path="M-20 120 C200 80, 400 180, 620 140 S980 60, 1220 110" />
-        </circle>
-        <circle r="2.4" fill="#4A6CFF" className="content-pulse">
-          <animateMotion dur="16s" repeatCount="indefinite" begin="1s" path="M-40 320 C180 280, 420 380, 680 340 S1020 260, 1240 310" />
-        </circle>
-        <circle r="2.6" fill="#10B981" className="content-pulse">
-          <animateMotion dur="15s" repeatCount="indefinite" begin="0.5s" path="M280 -20 C300 160, 260 340, 320 520 S360 720, 300 920" />
-        </circle>
-        <circle r="2.2" fill="#4A6CFF" className="content-pulse">
-          <animateMotion dur="18s" repeatCount="indefinite" begin="2s" path="M720 -10 C700 180, 760 360, 740 540 S720 740, 780 920" />
-        </circle>
+        {!reduceMotion && (
+          <>
+            <circle r="2.8" fill="#FF7A00" className="content-pulse">
+              <animateMotion dur="14s" repeatCount="indefinite" path="M-20 120 C200 80, 400 180, 620 140 S980 60, 1220 110" />
+            </circle>
+            <circle r="2.4" fill="#4A6CFF" className="content-pulse">
+              <animateMotion dur="16s" repeatCount="indefinite" begin="1s" path="M-40 320 C180 280, 420 380, 680 340 S1020 260, 1240 310" />
+            </circle>
+            {!light && (
+              <>
+                <circle r="2.6" fill="#10B981" className="content-pulse">
+                  <animateMotion dur="15s" repeatCount="indefinite" begin="0.5s" path="M280 -20 C300 160, 260 340, 320 520 S360 720, 300 920" />
+                </circle>
+                <circle r="2.2" fill="#4A6CFF" className="content-pulse">
+                  <animateMotion dur="18s" repeatCount="indefinite" begin="2s" path="M720 -10 C700 180, 760 360, 740 540 S720 740, 780 920" />
+                </circle>
+              </>
+            )}
+          </>
+        )}
       </svg>
     </div>
   );
